@@ -46,19 +46,33 @@ void Buffer::WriteInt32BE(size_t index, int value) {
 	++mWriteIndex;
 }
 
-//unsigned short
+//UNSIGNED SHORT
 void Buffer::WriteUShortBE(size_t index, unsigned short value) {
-
+	mBuffer[index] = value >> 8;
+	++mWriteIndex;
+	mBuffer[index + 1] = value;
+	++mWriteIndex;
 }
+
 void Buffer::WriteUShortBE(unsigned short value) {
+	mBuffer[mWriteIndex] = value >> 8;
+	++mWriteIndex;
+	mBuffer[mWriteIndex] = value;
+	++mWriteIndex;
+}
 
-}
 unsigned short Buffer::ReadUShortBE(size_t index) {
-	return 1;
+	unsigned short value = mBuffer[index] << 8;
+	value |= mBuffer[index + 1];
+	return value;
 }
+
 unsigned short Buffer::ReadUShortBE(void) {
-	return 1;
+	unsigned short value = mBuffer[mReadIndex] << 8;
+	value |= mBuffer[mReadIndex + 1];
+	return value;
 }
+
 
 //SHORT
 void Buffer::WriteShortBE(size_t index, short value) {
@@ -86,6 +100,8 @@ short Buffer::ReadShortBE(void) {
 	value |= mBuffer[mReadIndex + 1];
 	return value;
 }
+
+
 
 //TO DO: string conversion(not really converting anything)
 void Buffer::WriteStringBE(size_t index, std::string value) {
