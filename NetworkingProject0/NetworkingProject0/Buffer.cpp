@@ -60,18 +60,31 @@ unsigned short Buffer::ReadUShortBE(void) {
 	return 1;
 }
 
-//short
+//SHORT
 void Buffer::WriteShortBE(size_t index, short value) {
-
+	mBuffer[index] = value >> 8;
+	++mWriteIndex;
+	mBuffer[index + 1] = value;
+	++mWriteIndex;
 }
+
 void Buffer::WriteShortBE(short value) {
+	mBuffer[mWriteIndex] = value >> 8;
+	++mWriteIndex;
+	mBuffer[mWriteIndex] = value;
+	++mWriteIndex;
+}
 
-}
 short Buffer::ReadShortBE(size_t index) {
-	return 1;
+	short value = mBuffer[index] << 8;
+	value |= mBuffer[index + 1];
+	return value;
 }
+
 short Buffer::ReadShortBE(void) {
-	return 1;
+	short value = mBuffer[mReadIndex] << 8;
+	value |= mBuffer[mReadIndex + 1];
+	return value;
 }
 
 //TO DO: string conversion(not really converting anything)
