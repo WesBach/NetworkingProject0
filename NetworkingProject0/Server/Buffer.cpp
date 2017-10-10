@@ -5,6 +5,14 @@ Buffer::Buffer(size_t size) {
 
 }
 
+Buffer::Buffer() {
+	return;
+}
+
+Buffer::~Buffer() {
+	return;
+}
+
 //int
 //INT32
 int Buffer::ReadInt32BE(void) {

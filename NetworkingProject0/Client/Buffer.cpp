@@ -3,6 +3,13 @@
 Buffer::Buffer(size_t size) {
 
 }
+Buffer::Buffer() {
+	return;
+}
+
+Buffer::~Buffer() {
+	return;
+}
 
 //int
 //INT32

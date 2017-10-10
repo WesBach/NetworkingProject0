@@ -5,7 +5,8 @@
 class Buffer {
 public:
 	Buffer(size_t size);
-
+	Buffer();
+	~Buffer();
 	//int
 	void WriteInt32BE(size_t index, int value);
 	void WriteInt32BE(int value);
