@@ -22,6 +22,7 @@ int Buffer::ReadInt32BE(size_t index) {
 	value |= mBuffer[index + 1] << 16;
 	value |= mBuffer[index + 2] << 8;
 	value |= mBuffer[index + 3];
+	return value;
 }
 
 void Buffer::WriteInt32BE(int value) {
