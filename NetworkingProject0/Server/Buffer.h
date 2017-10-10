@@ -1,3 +1,4 @@
+#pragma once
 #ifndef Buffer_HG
 #define Buffer_HG
 #include<vector>
