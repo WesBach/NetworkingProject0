@@ -8,26 +8,29 @@
 
 #include <iostream>
 
-Buffer buffer;
-
 #pragma comment(lib, "Ws2_32.lib")
 #define DEFAULT_PORT "8899"
 #define DEFAULT_BUFFER_LENGTH 1024
 //socket info structure to store all the individual socket information
-struct SocketInfo {
+
+enum message_ID { JOINROOM, LEAVEROOM , SENDMESSAGE, RECEIVEMESSAGE };
+
+class SocketInfo {
+public:
 	int ID;
 	Buffer buffer[DEFAULT_BUFFER_LENGTH];
 	SOCKET socket;
 	DWORD bytesSEND;
 	DWORD bytesRECV;
 };
+SocketInfo* g_curSocketInfo = new SocketInfo();
 
 //Header struct for packet length and message id
 struct Header {
 public:
 	//[packet_length][message_id]
 	int packet_length;			//in bytes
-	int message_id;				//who it came from
+	int message_id;				//What user is trying to do
 };
 
 //read packet function
@@ -35,7 +38,8 @@ public:
 //get socket function for populating the socket info and pushing back onto
 void addSocketInformation(SOCKET socket);
 void freeSocketInformation(int Index);
-//Protocols
+
+//Protocols method headers
 void sendMessage(Header &theHeader,
 	int &roomNameLength,
 	std::string &roomName,
@@ -50,8 +54,8 @@ void receiveMessage(Header &theHeader,
 	int &roomNameLength,
 	std::string &roomName
 );
-void joinRoom(Header &theHeader, int &roomNameLength, std::string &roomName);
-void leaveRoom(Header &theHeader, int &roomNameLength, std::string &roomName);
+void joinRoom(std::string &roomName);
+void leaveRoom(std::string &roomName);
 
 //sockets
 std::vector<SocketInfo> g_theSockets;
@@ -276,6 +280,9 @@ void addSocketInformation(SOCKET s)
 		0,
 		0,
 	};
+
+
+
 	//set the id and increment it 
 	g_IDCounter++;
 	g_theSockets.push_back(sInfo);
@@ -294,24 +301,26 @@ void freeSocketInformation(int Index)
 //TO DO: Fill in the protocol functions 
 void sendMessage(Header &theHeader, int &roomNameLength, std::string &roomName, int &messageLength, std::string &message)
 {
+	//temp filer
+	std::cout << "hello" << std::endl;
 }
 
 void receiveMessage(Header & theHeader, int & senderNameLength, std::string & senderName, int & messageLength, std::string & message, int & roomNameLength, std::string & roomName)
 {
+	//temp filer
+	std::cout << "thanks" << std::endl;
 }
 
-void joinRoom(std::string roomName /*, Socket clientSocket ???*/)
+void joinRoom(std::string &roomName)
 {
-	//add the user to the buffer? as a parameter?
-
-	buffer.WriteInt32BE(roomName.length);
-	buffer.WriteStringBE(roomName);
-
-	//is this it?
-	//reading from buffer?
-
+	g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
+	g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
-void leaveRoom(Header &theHeader, int &roomNameLength, std::string &roomName)
+void leaveRoom(std::string &roomName)
 {
+	g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
+	g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
+
+
