@@ -30,6 +30,7 @@ public:
 	void WriteStringBE(std::string value);
 	short ReadStringBE(size_t index);
 	short ReadStringBE(void);
+	int GetBufferLength();
 
 private:
 	std::vector<uint8_t> mBuffer;

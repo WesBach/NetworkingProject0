@@ -15,9 +15,7 @@
 struct SocketInfo {
 	int ID;
 	Buffer buffer[DEFAULT_BUFFER_LENGTH];
-	WSABUF dataBuf;
 	SOCKET socket;
-	OVERLAPPED overlapped;
 	DWORD bytesSEND;
 	DWORD bytesRECV;
 };
@@ -107,15 +105,14 @@ int main()
 		return 1;
 	}
 
-
-	// Accept the connection.
-	AcceptSocket = accept(ListenSocket, NULL, NULL);
-	if (AcceptSocket == INVALID_SOCKET) {
-		wprintf(L"accept failed with error: %ld\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
+	//// Accept the connection.
+	//AcceptSocket = accept(ListenSocket, NULL, NULL);
+	//if (AcceptSocket == INVALID_SOCKET) {
+	//	wprintf(L"accept failed with error: %ld\n", WSAGetLastError());
+	//	closesocket(ListenSocket);
+	//	WSACleanup();
+	//	return 1;
+	//}
 
 	ULONG nonBlock = 1;
 	if (ioctlsocket(ListenSocket, FIONBIO, &nonBlock) == SOCKET_ERROR)
@@ -195,7 +192,7 @@ int main()
 				flags = 0;
 				//To Do: replace this functionality with reading the information with the buffer class we created
 				//or add it maybe?
-				if (WSARecv(socketInfo.socket, &(socketInfo.dataBuf), 1, &RecvBytes, &flags, NULL, NULL) == SOCKET_ERROR)
+				if (recv(socketInfo.socket, (char*)socketInfo.buffer, socketInfo.buffer->GetBufferLength(),flags) == SOCKET_ERROR)
 				{
 					if (WSAGetLastError() != WSAEWOULDBLOCK)
 					{
@@ -203,17 +200,6 @@ int main()
 						freeSocketInformation(i);
 					}
 					continue;
-				}
-				else
-				{
-					socketInfo.bytesRECV = RecvBytes;
-
-					// If zero bytes are received, this indicates the peer closed the connection.
-					if (RecvBytes == 0)
-					{
-						freeSocketInformation(i);
-						continue;
-					}
 				}
 			}//if (FD_ISSET(socketInfo.socket, &readSet))
 
@@ -224,11 +210,7 @@ int main()
 			{
 				totalSocketsInSet--;
 
-				//adjust this for our purpose
-				//socketInfo.dataBuf.buf = socketInfo.buffer + socketInfo.bytesSEND;
-				//socketInfo.dataBuf.len = socketInfo.bytesRECV - socketInfo.BytesSEND;
-
-				if (WSASend(socketInfo.socket, &(socketInfo.dataBuf), 1, &SendBytes, 0, NULL, NULL) == SOCKET_ERROR)
+				if (send(socketInfo.socket, (char*)socketInfo.buffer, socketInfo.buffer->GetBufferLength() , flags) == SOCKET_ERROR)
 				{
 					if (WSAGetLastError() != WSAEWOULDBLOCK)
 					{
@@ -237,16 +219,6 @@ int main()
 					}
 
 					continue;
-				}
-				else
-				{
-					socketInfo.bytesSEND += SendBytes;
-
-					if (socketInfo.bytesSEND == socketInfo.bytesRECV)
-					{
-						socketInfo.bytesSEND = 0;
-						socketInfo.bytesRECV = 0;
-					}
 				}
 			}//if (FD_ISSET(socketInfo.socket, &writeSet))
 		}//for (int i = 0; totalSocketsInSet > 0 && i < g_theSockets.size(); i++)	
@@ -260,17 +232,17 @@ int main()
 
 void ReadPacket(SOCKET socket)
 {
-	int result = recv(socket, &buffer, buflen, flags);
-	if (result = INVALID_SOCKET)
-	{
-		printf("Recv error, %d\n", WSAGetLastError());
-		//remove from sockets
-		return;
-	}
-	else if (result == 0)
-	{
-		printf("client has disconnected.\n");
-	}
+	//int result = recv(socket, &buffer, buflen, flags);
+	//if (result = INVALID_SOCKET)
+	//{
+	//	printf("Recv error, %d\n", WSAGetLastError());
+	//	//remove from sockets
+	//	return;
+	//}
+	//else if (result == 0)
+	//{
+	//	printf("client has disconnected.\n");
+	//}
 
 	//BytesRecv += result;
 
@@ -305,7 +277,7 @@ void freeSocketInformation(int Index)
 	SocketInfo sInfo = g_theSockets[Index];
 	closesocket(sInfo.socket);
 	// Squash the socket array
-	//g_theSockets
+	g_theSockets.erase(g_theSockets.begin(),g_theSockets.begin()+Index);
 }
 
 

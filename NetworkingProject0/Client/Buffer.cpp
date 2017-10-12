@@ -11,6 +11,10 @@ Buffer::~Buffer() {
 	return;
 }
 
+int Buffer::GetBufferLength() {
+	return this->mBuffer.size();
+}
+
 //int
 //INT32
 int Buffer::ReadInt32BE(void) {
