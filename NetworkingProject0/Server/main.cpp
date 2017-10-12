@@ -8,6 +8,8 @@
 
 #include <iostream>
 
+Buffer buffer;
+
 #pragma comment(lib, "Ws2_32.lib")
 #define DEFAULT_PORT "8899"
 #define DEFAULT_BUFFER_LENGTH 1024
@@ -291,8 +293,16 @@ void receiveMessage(Header & theHeader, int & senderNameLength, std::string & se
 {
 }
 
-void joinRoom(Header &theHeader, int &roomNameLength, std::string &roomName)
+void joinRoom(std::string roomName /*, Socket clientSocket ???*/)
 {
+	//add the user to the buffer? as a parameter?
+
+	buffer.WriteInt32BE(roomName.length);
+	buffer.WriteStringBE(roomName);
+
+	//is this it?
+	//reading from buffer?
+
 }
 
 void leaveRoom(Header &theHeader, int &roomNameLength, std::string &roomName)
