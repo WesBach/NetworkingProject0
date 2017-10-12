@@ -78,8 +78,15 @@ int main()
 	addressInfo.ai_protocol = IPPROTO_TCP;
 	addressInfo.ai_flags = AI_PASSIVE;
 
+
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		printf("WSAStartup failed: %d\n", iResult);
+		return 1;
+	}
+
 	// Socket()
-	ListenSocket = socket(AF_INET, SOCK_STREAM, 0);
+	ListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (ListenSocket == INVALID_SOCKET) {
 		printf("socket() failed with error %d\n", WSAGetLastError());
 		WSACleanup();
