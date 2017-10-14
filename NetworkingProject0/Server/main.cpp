@@ -26,7 +26,7 @@ public:
 SocketInfo* g_curSocketInfo = new SocketInfo();
 
 //Header struct for packet length and message id
-struct Header {
+class Header {
 public:
 	//[packet_length][message_id]
 	int packet_length;			//in bytes
@@ -84,7 +84,6 @@ int main()
 	addressInfo.ai_protocol = IPPROTO_TCP;
 	addressInfo.ai_flags = AI_PASSIVE;
 
-
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
 		printf("WSAStartup failed: %d\n", iResult);
@@ -98,6 +97,7 @@ int main()
 		WSACleanup();
 		return 1;
 	}
+	printf("Created Listen Socket\n");
 
 	// Bind()
 	iResult = getaddrinfo(NULL, DEFAULT_PORT, &addressInfo, &result);
@@ -109,6 +109,7 @@ int main()
 		WSACleanup();
 		return 1;
 	}
+	printf("Bind Listen Socket\n");
 
 	// Listen()
 	if (listen(ListenSocket, 5)) {
@@ -117,15 +118,16 @@ int main()
 		WSACleanup();
 		return 1;
 	}
+	printf("Listen for incoming requests\n");
 
-	//// Accept the connection.
-	//AcceptSocket = accept(ListenSocket, NULL, NULL);
-	//if (AcceptSocket == INVALID_SOCKET) {
-	//	wprintf(L"accept failed with error: %ld\n", WSAGetLastError());
-	//	closesocket(ListenSocket);
-	//	WSACleanup();
-	//	return 1;
-	//}
+	// Accept the connection.
+	AcceptSocket = accept(ListenSocket, NULL, NULL);
+	if (AcceptSocket == INVALID_SOCKET) {
+		wprintf(L"accept failed with error: %ld\n", WSAGetLastError());
+		closesocket(ListenSocket);
+		WSACleanup();
+		return 1;
+	}
 
 	ULONG nonBlock = 1;
 	if (ioctlsocket(ListenSocket, FIONBIO, &nonBlock) == SOCKET_ERROR)
@@ -280,8 +282,6 @@ void addSocketInformation(SOCKET s)
 		0,
 		0,
 	};
-
-
 
 	//set the id and increment it 
 	g_IDCounter++;
