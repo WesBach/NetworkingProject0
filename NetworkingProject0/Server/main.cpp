@@ -301,24 +301,30 @@ void freeSocketInformation(int Index)
 //TO DO: Fill in the protocol functions 
 void sendMessage(Header &theHeader, int &roomNameLength, std::string &roomName, int &messageLength, std::string &message)
 {
-	//temp filer
+	//temp filler
 	std::cout << "hello" << std::endl;
 }
 
 void receiveMessage(Header & theHeader, int & senderNameLength, std::string & senderName, int & messageLength, std::string & message, int & roomNameLength, std::string & roomName)
 {
-	//temp filer
+	//temp filler
 	std::cout << "thanks" << std::endl;
 }
 
 void joinRoom(std::string &roomName)
 {
+	Header* header = new Header();
+
+	header->message_id = JOINROOM;
 	g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
 	g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
 void leaveRoom(std::string &roomName)
 {
+	Header* header = new Header();
+
+	header->message_id = LEAVEROOM;
 	g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
 	g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
