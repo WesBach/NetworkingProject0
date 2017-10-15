@@ -9,7 +9,7 @@
 #include <iostream>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define DEFAULT_PORT "8899"
+#define DEFAULT_PORT "5000"	//was 8899
 #define DEFAULT_BUFFER_LENGTH 1024
 //socket info structure to store all the individual socket information
 
