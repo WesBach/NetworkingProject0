@@ -1,3 +1,4 @@
+
 #include "Buffer.h"
 #include <string>
 #include <iostream>
@@ -11,17 +12,26 @@
 #define DEFAULT_PORT "5000"
 #define DEFAULT_BUFFER_LENGTH 512
 
+class Header {
+public:
+	//[packet_length][message_id]
+	int32_t packet_length;			//in bytes
+	int32_t message_id;				//What user is trying to do
+};
+
+//global buffer 
+Buffer* g_theBuffer;
+Header* g_theHeader;
+
+//Protocols method headers
+void sendMessage(Header* theHeader,std::string message);
+
 //TO DO: Client side connection
 int main(int argc, char** argv) {
-	
-	//if (argc != 2) {
-	//	printf("usage: %s server-name\n", argv[0]);
-	//	//return 1;
-	//}
-
+	g_theBuffer = new Buffer();
+	g_theHeader = new Header();
 	WSADATA wsaData;
 	SOCKET ConnectSocket = INVALID_SOCKET;
-
 	struct addrinfo* result = NULL;
 	struct addrinfo* ptr = NULL;
 	struct addrinfo hints;
@@ -35,22 +45,20 @@ int main(int argc, char** argv) {
 	}
 	printf("Winsock Initialized\n");
 
+
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
-	//TODO: Replace the argv[1] with something from the program. or just leave it? 127.0.0.1?
-	iResult = getaddrinfo("127.0.0.1"/*argv[1]*/, DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
 		return 1;
 	}
-	printf("Server Information Collected\n");
 
 
-	//Connecting to server?
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
 		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if (ConnectSocket == INVALID_SOCKET) {
@@ -65,12 +73,10 @@ int main(int argc, char** argv) {
 			ConnectSocket = INVALID_SOCKET;
 			continue;
 		}
-
 		break;
 	}
 
 	freeaddrinfo(result);
-
 	//Check if the Connected socket is valid
 	if (ConnectSocket == INVALID_SOCKET) {
 		printf("Unable to connect to server\n");
@@ -79,48 +85,84 @@ int main(int argc, char** argv) {
 	}
 	printf("Connected to Server\n");
 
-	//Taking in user's input and quiting when detecting the 'q' (infinite loop)
-	while (true)
-	{
-		if (_kbhit()) 
+
+	std::string userInput;
+	do {
+
+
+		std::cout << "> ";
+		std::getline(std::cin, userInput);
+
+		if (userInput.size() > 0)
 		{
-
-			char ch, sendbuf[DEFAULT_BUFFER_LENGTH];
-			int i = 0;
-			while (((ch = _getche()) != '\r') && (i < DEFAULT_BUFFER_LENGTH - 1))
+			int sendResult = send(ConnectSocket, userInput.c_str(), userInput.size() + 1, 0);
+			if (sendResult != SOCKET_ERROR)
 			{
-				sendbuf[i] = ch;
-				i++;
+
+				int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+				if (bytesReceived > 0)
+				{
+					//do the conversion
+				}
 			}
-			sendbuf[i] = '\0';
-
-
-			//send the Server some sort of infomation form the client (this should be the Join/Leave/Send stuff)
-			iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
-			if (iResult == SOCKET_ERROR) {
-				printf("socket() failed with error: %d\n", iResult);
-				closesocket(ConnectSocket);
-				WSACleanup();
-				return 1;
-			}
-
-			//if (ch == 'q')
-			//{
-			//	std::cout << "QUIT" << std::endl;
-
-				//this should be called when you want to exit the program NOT NEEDED NOW
-				//iResult = shutdown(ConnectSocket, SD_SEND);
-				//if (iResult == SOCKET_ERROR) {
-				//	printf("shutdown() failed with error: %d\n", iResult);
-				//	closesocket(ConnectSocket);
-				//	WSACleanup();
-				//	return 1;
-				//}
-
-				//closesocket(ConnectSocket);
-				//WSACleanup();
-			//	break;
-			//}
 		}
-	}
+
+
+
+	} while (userInput.size() > 0);
+
+		//Taking in user's input and quiting when detecting the 'q' (infinite loop)
+		//while (true)
+		//{
+		//	if (_kbhit()) 
+		//	{
+
+		//		//need to make this out buffer class
+		//		char ch, sendbuf[DEFAULT_BUFFER_LENGTH];
+		//		int i = 0;
+		//		while (((ch = _getche()) != '\r') && (i < DEFAULT_BUFFER_LENGTH - 1))
+		//		{
+		//			sendbuf[i] = ch;
+		//			i++;
+		//		}
+		//		sendbuf[i] = '\0';
+
+		//		sendMessage(g_theHeader, sendbuf);
+		//		//send the Server some sort of infomation form the client (this should be the Join/Leave/Send stuff)
+		//		iResult = send(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+		//		if (iResult == SOCKET_ERROR) {
+		//			printf("socket() failed with error: %d\n", iResult);
+		//			closesocket(ConnectSocket);
+		//			WSACleanup();
+		//			return 1;
+		//		}
+
+		//		//if (ch == 'q')
+		//		//{
+		//		//	std::cout << "QUIT" << std::endl;
+
+		//			//this should be called when you want to exit the program NOT NEEDED NOW
+		//			//iResult = shutdown(ConnectSocket, SD_SEND);
+		//			//if (iResult == SOCKET_ERROR) {
+		//			//	printf("shutdown() failed with error: %d\n", iResult);
+		//			//	closesocket(ConnectSocket);
+		//			//	WSACleanup();
+		//			//	return 1;
+		//			//}
+
+		//			//closesocket(ConnectSocket);
+		//			//WSACleanup();
+		//		//	break;
+		//		//}
+		//	}
+		//}
+}
+
+void sendMessage(Header* theHeader, std::string message)
+{
+	theHeader->message_id = 1;
+	theHeader->packet_length = message.length();
+	g_theBuffer->WriteInt32BE(theHeader->message_id);
+	g_theBuffer->WriteInt32BE(theHeader->packet_length);
+	g_theBuffer->WriteStringBE(message);
 }

@@ -7,8 +7,8 @@ public:
 	Buffer();
 	~Buffer();
 	//int
-	void WriteInt32BE(size_t index, int value);
-	void WriteInt32BE(int value);
+	void WriteInt32BE(size_t index, int32_t value);
+	void WriteInt32BE(int32_t value);
 	int ReadInt32BE(size_t index);
 	int ReadInt32BE(void);
 
@@ -27,10 +27,11 @@ public:
 	//TO DO: string conversion(not really converting anything)
 	void WriteStringBE(size_t index, std::string value);
 	void WriteStringBE(std::string value);
-	short ReadStringBE(size_t index);
-	short ReadStringBE(void);
+	std::string ReadStringBE(size_t index,int length);
+	std::string ReadStringBE(void);
 	int GetBufferLength();
-
+	std::vector<uint8_t> getBuffer();
+	char* Buffer::getBufferAsCharArray();
 private:
 	std::vector<uint8_t> mBuffer;
 	int mReadIndex;
