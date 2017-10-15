@@ -33,19 +33,21 @@ int main(int argc, char** argv) {
 		printf("WSAStartup failed: %d\n", iResult);
 		return 1;
 	}
+	printf("Winsock Initialized\n");
 
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
-	//TODO: Replace the argv[1] with something from the program.
-	iResult = getaddrinfo(argv[1], DEFAULT_PORT, &hints, &result);
+	//TODO: Replace the argv[1] with something from the program. or just leave it? 127.0.0.1?
+	iResult = getaddrinfo("127.0.0.1"/*argv[1]*/, DEFAULT_PORT, &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
 		return 1;
 	}
+	printf("Server Information Collected\n");
 
 
 	//Connecting to server?
@@ -71,31 +73,36 @@ int main(int argc, char** argv) {
 
 	//Check if the Connected socket is valid
 	if (ConnectSocket == INVALID_SOCKET) {
-		printf("Unable to connect to server");
+		printf("Unable to connect to server\n");
 		WSACleanup();
 		return 1;
 	}
+	printf("Connected to Server\n");
 
 	//Taking in user's input and quiting when detecting the 'q' (infinite loop)
 	while (true)
 	{
 		if (_kbhit()) 
 		{
-			char ch = _getch();
-			std::cout << ch;
 
-			//SUDO CODE - Take in what the user has typed in and send it to the server.
-			//if (ENTER IS PRESSED)
-			//{
-				////send the Server some sort of infomation form the client (this should be the Join/Leave/Send stuff
-				//iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
-				//if (iResult == SOCKET_ERROR) {
-				//	printf("socket() failed with error: %d\n", iResult);
-				//	closesocket(ConnectSocket);
-				//	WSACleanup();
-				//	return 1;
-				//}
-			//}
+			char ch, sendbuf[DEFAULT_BUFFER_LENGTH];
+			int i = 0;
+			while (((ch = _getche()) != '\r') && (i < DEFAULT_BUFFER_LENGTH - 1))
+			{
+				sendbuf[i] = ch;
+				i++;
+			}
+			sendbuf[i] = '\0';
+
+
+			//send the Server some sort of infomation form the client (this should be the Join/Leave/Send stuff)
+			iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
+			if (iResult == SOCKET_ERROR) {
+				printf("socket() failed with error: %d\n", iResult);
+				closesocket(ConnectSocket);
+				WSACleanup();
+				return 1;
+			}
 
 			//if (ch == 'q')
 			//{
