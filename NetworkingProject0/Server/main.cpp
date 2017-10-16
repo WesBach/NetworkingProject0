@@ -81,7 +81,7 @@ int main()
 	DWORD RecvBytes;
 	DWORD SendBytes;
 
-	//populating the roomMate with rooms (a-z)
+	//populating the roomName with rooms (a-z)
 	char *alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	for (int i = 0; alpha[i] != '\0'; i++)
 	{
@@ -276,7 +276,7 @@ void addSocketInformation(SOCKET s)
 	//set the id and increment it 
 	g_IDCounter++;
 	g_theSockets.push_back(sInfo);
-	
+
 }
 
 void freeSocketInformation(int Index)
@@ -284,7 +284,7 @@ void freeSocketInformation(int Index)
 	SocketInfo sInfo = g_theSockets[Index];
 	closesocket(sInfo.socket);
 	// Squash the socket array
-	g_theSockets.erase(g_theSockets.begin(),g_theSockets.begin()+Index);
+	g_theSockets.erase(g_theSockets.begin(), g_theSockets.begin() + Index);
 }
 
 
@@ -327,13 +327,30 @@ void joinRoom(SOCKET* joinSocket, char &roomName)
 	//g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
-void leaveRoom(std::string &roomName)
+void leaveRoom(SOCKET* leaveSocket, char &roomName)
 {
-	Header* header = new Header();
+	for (std::map<char, std::vector<SOCKET*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
+	{
+		if (roomName == it->first)
+		{
+			for (std::vector<SOCKET*>::iterator iter = it->second.begin(); iter != it->second.end(); ++iter)
+			{
+				if (*iter == leaveSocket)
+				{
+					it->second.erase(iter);
+				}
+			}	
+		}
+	}
 
-	header->message_id = LEAVEROOM;
-	g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
-	g_curSocketInfo->buffer->WriteStringBE(roomName);
+	for (int i = 0; i < master.fd_count; i++)
+	{
+		SOCKET outSock = master.fd_array[i];
+		if (outSock != ListenSocket && outSock != *leaveSocket)
+		{
+			send(outSock, "A User has Left the room: " + roomName, 2 + 1, 0);
+		}
+	}
 }
 
 
