@@ -1,7 +1,6 @@
 #define UNICODE
 #define WIN_32_CHAT_APP_SERVER
 
-//#include <Windows.h>   freaks out if i include this
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include "Buffer.h"
@@ -10,9 +9,8 @@
 #include <map>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define DEFAULT_PORT "5000"	//was 8899
+#define DEFAULT_PORT "5000"	
 #define DEFAULT_BUFFER_LENGTH 1024
-//socket info structure to store all the individual socket information
 
 //Globel variables
 enum message_ID { JOINROOM, LEAVEROOM , SENDMESSAGE, RECEIVEMESSAGE };
@@ -21,18 +19,19 @@ fd_set master;
 SOCKET ListenSocket;
 Buffer* g_theBuffer;
 std::string parseMessage(int messageLength);
+std::vector<std::string> readPacket(int packetlength);
 
 //Protocols method headers
 void sendMessage(SOCKET* sendingUser, char* message);
 void joinRoom(SOCKET* joinSocket, char &roomName);
 void leaveRoom(SOCKET* leaveSocket, char &roomName);
-std::vector<std::string> readPacket(int packetlength);
 void buildMessage(std::string message);
 
 int g_IDCounter = 0;
 
 int main()
 {
+	//Socket Information
 	SOCKET AcceptSocket;
 	fd_set readSet;
 	fd_set writeSet;
@@ -46,14 +45,14 @@ int main()
 	DWORD RecvBytes;
 	DWORD SendBytes;
 
-	//populating the roomName with rooms (a-z)
+	//Populating the roomName with rooms (a-z)
 	char *alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	for (int i = 0; alpha[i] != '\0'; i++)
 	{
 		roomMap[alpha[i]];
 	}
 
-	//create a socket for the server with the port 8899
+	//Create a socket for the server
 	ZeroMemory(&addressInfo, sizeof(addressInfo));
 	addressInfo.ai_family = AF_INET;
 	addressInfo.ai_socktype = SOCK_STREAM;
@@ -65,10 +64,8 @@ int main()
 		printf("WSAStartup failed: %d\n", iResult);
 		return 1;
 	}
-
-	// Socket()
-	//socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
 	
+	//Allocating the listen Socket
 	ListenSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (ListenSocket == INVALID_SOCKET) {
 		printf("socket() failed with error %d\n", WSAGetLastError());
@@ -77,7 +74,7 @@ int main()
 	}
 	printf("Created Listen Socket\n");
 
-	// Bind()
+	// Bind()ing the listen Socket
 	iResult = getaddrinfo(NULL, DEFAULT_PORT, &addressInfo, &result);
 	iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
 	if (iResult == SOCKET_ERROR) {
@@ -89,7 +86,7 @@ int main()
 	}
 	printf("Bind Listen Socket\n");
 
-	// Listen()
+	//Ready to listen for incoming requests
 	if (listen(ListenSocket, 5)) {
 		printf("listen() failed with error: %d\n", WSAGetLastError());
 		closesocket(ListenSocket);
@@ -107,12 +104,10 @@ int main()
 	char tempBreak;
 	bool running = true;
 
+	//Looping to check for the client sockets
 	while (running)
 	{
-		// Make a copy of the master file descriptor set, this is SUPER important because
-		// the call to select() is _DESTRUCTIVE_. The copy only contains the sockets that
-		// are accepting inbound connection requests OR messages.
-
+		//saving a copy of the master so the select doesnt destroy the sockets
 		fd_set copy = master;
 
 		// See who's talking to us
@@ -144,6 +139,7 @@ int main()
 				// Receive message
 				int bytesIn = recv(sock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 
+				//check validity
 				if (bytesIn <= 0)
 				{
 					// Drop the client
@@ -172,12 +168,14 @@ int main()
 	WSACleanup();
 }
 
+//Read back the message that was in the buffer
 std::string parseMessage(int messageLength) {
 	std::string tempMessage = "";
 	tempMessage += g_theBuffer->ReadStringBE(messageLength);
 	return tempMessage;
 }
 
+//Read the sent information (the packet) 
 std::vector<std::string> readPacket(int packetLength)
 {
 	std::string message = "";
@@ -211,10 +209,10 @@ std::vector<std::string> readPacket(int packetLength)
 		receviedMessages.push_back(message);
 	}
 
-	//fix this 
-	return std::vector<std::string>();
+	return receviedMessages;
 }
 
+//Enables a user to send a message in a room (or multiple rooms)
 void sendMessage(SOCKET* sendingUser, char* message)
 {
 	g_theBuffer = new Buffer(4096);
@@ -229,6 +227,7 @@ void sendMessage(SOCKET* sendingUser, char* message)
 	}
 }
 
+//builds a message
 void buildMessage(std::string message)
 {
 	g_theBuffer = new Buffer(4096);
@@ -236,6 +235,7 @@ void buildMessage(std::string message)
 	g_theBuffer->WriteStringBE(message);
 }
 
+//Enables the user to join a room
 void joinRoom(SOCKET* joinSocket, char &roomName)
 {
 	for (std::map<char, std::vector<SOCKET*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
@@ -262,6 +262,8 @@ void joinRoom(SOCKET* joinSocket, char &roomName)
 	//g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
+
+//Enables a user to leave a room that they are in
 void leaveRoom(SOCKET* leaveSocket, char &roomName)
 {
 	for (std::map<char, std::vector<SOCKET*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)

@@ -1,10 +1,8 @@
-
 #include "Buffer.h"
 #include <string>
 #include <iostream>
 #include <conio.h>
 
-//#include <Windows.h>
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #pragma comment (lib, "Ws2_32.lib")
@@ -12,6 +10,7 @@
 #define DEFAULT_PORT "5000"
 #define DEFAULT_BUFFER_LENGTH 512
 
+//Header class for the message
 class Header {
 public:
 	//[packet_length][message_id]
@@ -19,7 +18,7 @@ public:
 	int32_t message_id;				//What user is trying to do
 };
 
-//global buffer 
+//Global buffer 
 Buffer* g_theBuffer;
 Header* g_theHeader;
 
@@ -29,8 +28,6 @@ void readInput(std::vector<std::string>& theStrings, std::string input);
 void processCommands(std::vector<std::string>& theCommands);
 std::vector<std::string> theCommands;
 
-
-//TO DO: Client side connection
 int main(int argc, char** argv) {
 	g_theBuffer = new Buffer(4096);
 	g_theHeader = new Header();
@@ -55,7 +52,7 @@ int main(int argc, char** argv) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
-	//get the address info 
+	//Get the address info 
 	iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);

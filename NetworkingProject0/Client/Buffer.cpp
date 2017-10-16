@@ -4,24 +4,28 @@ Buffer::Buffer(size_t size) {
 	this->mBuffer = std::vector<char>(size);
 }
 
+//Constructor
 Buffer::Buffer() {
 	return;
 }
 
+//Destructor
 Buffer::~Buffer() {
 	return;
 }
 
-
+//getter
 std::vector<char>& Buffer::getBuffer()
 {
 	return mBuffer;
 }
 
+//returns the buffer as a vector of chars
 char* Buffer::getBufferAsCharArray() {
 	return &mBuffer[0];
 }
 
+//gets buffer length
 int Buffer::GetBufferLength() {
 	return this->mBuffer.size();
 }
@@ -124,9 +128,9 @@ short Buffer::ReadShortBE(void) {
 }
 
 //TO DO: string conversion(not really converting anything)
-void Buffer::WriteStringBE(size_t index, std::string value) {
-
-}
+//void Buffer::WriteStringBE(size_t index, std::string value) {
+//
+//}
 
 void Buffer::WriteStringBE(std::string value) {
 	for (int i = 0; i < value.size(); i++)
