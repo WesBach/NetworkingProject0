@@ -288,12 +288,16 @@ void freeSocketInformation(int Index)
 }
 
 
-
-//TO DO: Fill in the protocol functions 
-void sendMessage(Header &theHeader, int &roomNameLength, std::string &roomName, int &messageLength, std::string &message)
+void sendMessage(SOCKET* sendingUser, char* message)
 {
-	//temp filler
-	std::cout << "hello" << std::endl;
+	for (int i = 0; i < master.fd_count; i++)
+	{
+		SOCKET outSock = master.fd_array[i];
+		if (outSock != ListenSocket && outSock != *sendingUser)
+		{
+			send(outSock, message, 2 + 1, 0);
+		}
+	}
 }
 
 void receiveMessage(Header & theHeader, int & senderNameLength, std::string & senderName, int & messageLength, std::string & message, int & roomNameLength, std::string & roomName)
