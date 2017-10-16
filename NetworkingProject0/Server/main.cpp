@@ -20,16 +20,6 @@ std::map<char, std::vector<SOCKET*>> roomMap;
 fd_set master;
 SOCKET ListenSocket;
 
-class SocketInfo {
-public:
-	int ID;
-	Buffer buffer[DEFAULT_BUFFER_LENGTH];
-	SOCKET socket;
-	DWORD bytesSEND;
-	DWORD bytesRECV;
-};
-SocketInfo* g_curSocketInfo = new SocketInfo();
-
 Buffer* g_theBuffer;
 //Header struct for packet length and message id
 class Header {
@@ -39,10 +29,6 @@ public:
 	int message_id;				//What user is trying to do
 };
 
-//read packet function
-//void readPacket(SOCKET socket);
-//get socket function for populating the socket info and pushing back onto
-void addSocketInformation(SOCKET socket);
 void freeSocketInformation(int Index);
 std::string parseMessage(int messageLength);
 
@@ -66,8 +52,6 @@ void leaveRoom(std::string &roomName);
 
 std::vector<std::string> readPacket(int packetlength);
 
-//sockets
-std::vector<SocketInfo> g_theSockets;
 int g_IDCounter = 0;
 
 int main()
@@ -178,11 +162,10 @@ int main()
 			}
 			else // It's an inbound message
 			{
-				char buf[4096];
-				ZeroMemory(buf, 4096);
+				g_theBuffer = new Buffer(4096);
 
 				// Receive message
-				int bytesIn = recv(sock, buf, 4096, 0);
+				int bytesIn = recv(sock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 
 				if (bytesIn <= 0)
 				{
@@ -192,29 +175,14 @@ int main()
 				}
 				else
 				{
-					// Check to see if it's a command. \quit kills the server
-					if (buf[0] == '\\')
-					{
-						// Is the command quit? 
-						std::string cmd = std::string(buf, bytesIn);
-						if (cmd == "\\quit")
-						{
-							running = false;
-							break;
-						}
-
-						// Unknown command
-						continue;
-					}
-
-					// Send message to other clients, and definiately NOT the listening socket
+					// Send message to other clients, and definately NOT the listening socket
 
 					for (int i = 0; i < master.fd_count; i++)
 					{
 						SOCKET outSock = master.fd_array[i];
 						if (outSock != ListenSocket && outSock != sock)
 						{
-							send(outSock, "hi", 2 + 1, 0);
+							send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 						}
 					}
 				}
@@ -263,34 +231,10 @@ std::vector<std::string> readPacket(int packetLength)
 	}
 }
 
-void addSocketInformation(SOCKET s)
-{
-	// Prepare SocketInfo structure for use
-	SocketInfo sInfo = {
-		g_IDCounter,
-		Buffer(),
-		s,
-		0,
-		0,
-	};
-
-	//set the id and increment it 
-	g_IDCounter++;
-	g_theSockets.push_back(sInfo);
-
-}
-
-void freeSocketInformation(int Index)
-{
-	SocketInfo sInfo = g_theSockets[Index];
-	closesocket(sInfo.socket);
-	// Squash the socket array
-	g_theSockets.erase(g_theSockets.begin(), g_theSockets.begin() + Index);
-}
-
-
 void sendMessage(SOCKET* sendingUser, char* message)
 {
+	g_theBuffer = new Buffer(4096);
+	buildMessage(message);
 	for (int i = 0; i < master.fd_count; i++)
 	{
 		SOCKET outSock = master.fd_array[i];
@@ -301,12 +245,12 @@ void sendMessage(SOCKET* sendingUser, char* message)
 	}
 }
 
-void receiveMessage(Header & theHeader, int & senderNameLength, std::string & senderName, int & messageLength, std::string & message, int & roomNameLength, std::string & roomName)
+void buildMessage(std::string message)
 {
-	//temp filler
-	std::cout << "thanks" << std::endl;
+	g_theBuffer = new Buffer(4096);
+	g_theBuffer->WriteInt32BE(message.size());
+	g_theBuffer->WriteStringBE(message);
 }
-
 
 void joinRoom(SOCKET* joinSocket, char &roomName)
 {
@@ -321,9 +265,11 @@ void joinRoom(SOCKET* joinSocket, char &roomName)
 	for (int i = 0; i < master.fd_count; i++)
 	{
 		SOCKET outSock = master.fd_array[i];
+		std::string message = "A New User has joined the room :" + roomName;
+		buildMessage(message);
 		if (outSock != ListenSocket && outSock != *joinSocket)
 		{
-			send(outSock, "A New User has joined the room: " + roomName, 2 + 1, 0);
+			send(outSock,  g_theBuffer->getBufferAsCharArray() , g_theBuffer->GetBufferLength(), 0);
 		}
 	}
 
@@ -350,10 +296,12 @@ void leaveRoom(SOCKET* leaveSocket, char &roomName)
 
 	for (int i = 0; i < master.fd_count; i++)
 	{
+		g_theBuffer = new Buffer();
 		SOCKET outSock = master.fd_array[i];
+		std::string message = "A User has Left the room : " + roomName;
 		if (outSock != ListenSocket && outSock != *leaveSocket)
 		{
-			send(outSock, "A User has Left the room: " + roomName, 2 + 1, 0);
+			send(outSock,g_theBuffer->getBufferAsCharArray(),g_theBuffer->GetBufferLength(), 0);
 		}
 	}
 }

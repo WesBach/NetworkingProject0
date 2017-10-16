@@ -132,7 +132,6 @@ int main(int argc, char** argv) {
 //Purpose:		takes in the message from the server and processes it
 std::string receiveMessage(Buffer& theBuffer) {
 	Header tempHeader;
-	tempHeader.message_id = theBuffer.ReadInt32BE();
 	tempHeader.packet_length = theBuffer.ReadInt32BE();
 	std::string message = theBuffer.ReadStringBE(tempHeader.packet_length);
 	return message;
