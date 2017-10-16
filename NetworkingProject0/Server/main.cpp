@@ -126,6 +126,7 @@ int main()
 	ULONG nonBlock = 1;
 	//zero out master
 	FD_ZERO(&master);
+	FD_SET(ListenSocket, &master);
 
 	//for debugging
 	char tempBreak;
@@ -176,6 +177,7 @@ int main()
 
 				// Receive message
 				int bytesIn = recv(sock, buf, 4096, 0);
+
 				if (bytesIn <= 0)
 				{
 					// Drop the client
@@ -206,10 +208,6 @@ int main()
 						SOCKET outSock = master.fd_array[i];
 						if (outSock != ListenSocket && outSock != sock)
 						{
-							
-							/*ss << "SOCKET #" << sock << ": " << buf << "\r\n";
-							std::string strOut = ss.str();*/
-
 							send(outSock, "hi", 2 + 1, 0);
 						}
 					}
@@ -217,117 +215,6 @@ int main()
 			}
 		}
 	}
-
-	//while (true) {
-
-	//	//zero the sets
-	//	FD_ZERO(&readSet);
-	//	FD_ZERO(&writeSet);
-
-	//	//listen for connections on listen socket
-	//	FD_SET(ListenSocket, &readSet);
-
-	//	// Set Read and Write notification for each socket based on the
-	//	// current state of the buffer.  If there is data remaining in the
-	//	// buffer then set the Write set otherwise the Read set
-	//	for (int i = 0; i < g_theSockets.size(); i++)
-	//	{
-	//		if (g_theSockets[i].bytesRECV > g_theSockets[i].bytesSEND)
-	//			FD_SET(g_theSockets[i].socket, &writeSet);
-	//		else {
-	//			if(FD_ISSET(g_theSockets[i].socket, &readSet))
-	//				FD_SET(g_theSockets[i].socket, &readSet);
-	//		}
-	//			
-	//	}
-
-	//	if ((totalSocketsInSet = select(0, &readSet, &writeSet, NULL, NULL)) == SOCKET_ERROR)
-	//	{
-	//		printf("select() returned with error %d\n", WSAGetLastError());
-	//		std::cin >> tempBreak;
-	//		return 1;
-	//	}
-
-	//	// Check for arriving connections on the listening socket.
-	//	if (FD_ISSET(ListenSocket, &readSet))
-	//	{
-	//		if ((AcceptSocket = accept(ListenSocket, NULL, NULL)) != INVALID_SOCKET)
-	//		{
-	//			// Set the accepted socket to non-blocking mode
-	//			nonBlock = 1;
-	//			if (ioctlsocket(AcceptSocket, FIONBIO, &nonBlock) == SOCKET_ERROR)
-	//			{
-	//				printf("ioctlsocket(FIONBIO) failed with error %d\n", WSAGetLastError());
-	//				std::cin >> tempBreak;
-	//				return 1;
-	//			}
-	//			else
-	//				printf("Accepted client connection.");
-	//			//add the socket info to the socket vector
-	//			addSocketInformation(AcceptSocket);
-	//			//totalSocketsInSet++;
-	//		}
-	//		else
-	//		{
-	//			if (WSAGetLastError() != WSAEWOULDBLOCK)
-	//			{
-	//				printf("accept() failed with error %d\n", WSAGetLastError());
-	//				return 1;
-	//			}
-	//		}
-	//	}
-
-	//	// Check each socket for Read and Write notification until the number
-	//	// of sockets in Total is satisfied
-	//	for (int i = 0; i < g_theSockets.size(); i++)
-	//	{
-	//		SocketInfo socketInfo = g_theSockets[i];
-
-	//		// If the ReadSet is marked for this socket then this means data
-	//		// is available to be read on the socket
-	//		if (FD_ISSET(socketInfo.socket, &readSet))
-	//		{
-
-	//			flags = 0;
-	//			if (recv(socketInfo.socket, (char*)socketInfo.buffer, socketInfo.buffer->GetBufferLength(),flags) == SOCKET_ERROR)
-	//			{
-	//				if (WSAGetLastError() != WSAEWOULDBLOCK)
-	//				{
-	//					printf("WSARecv() failed with error %d\n", WSAGetLastError());
-	//					std::cin >> tempBreak;
-	//					freeSocketInformation(i);
-	//				}
-	//				else
-	//					printf("Reveived information from client");
-
-	//				continue;
-	//			}
-	//			//====================
-	//			//		TO DO
-	//			//====================
-	//			//do something with the received data 
-	//			int breakp = 0;
-
-	//		}//if (FD_ISSET(socketInfo.socket, &readSet))
-
-
-	//		// If the WriteSet is marked on this socket then this means the internal
-	//		// data buffers are available for more data
-	//		if (FD_ISSET(socketInfo.socket, &writeSet))
-	//		{
-	//			if (send(socketInfo.socket, (char*)socketInfo.buffer, socketInfo.buffer->GetBufferLength() , flags) == SOCKET_ERROR)
-	//			{
-	//				if (WSAGetLastError() != WSAEWOULDBLOCK)
-	//				{
-	//					printf("WSASend() failed with error %d\n", WSAGetLastError());
-	//					std::cin >> tempBreak;
-	//					freeSocketInformation(i);
-	//				}
-	//				continue;
-	//			}
-	//		}//if (FD_ISSET(socketInfo.socket, &writeSet))
-	//	}//for (int i = 0; totalSocketsInSet > 0 && i < g_theSockets.size(); i++)	
-	//}//while (true) {
 
 	//clean up
 	closesocket(ListenSocket);

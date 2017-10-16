@@ -1,8 +1,9 @@
 #include "Buffer.h"
 
 Buffer::Buffer(size_t size) {
-
+	this->mBuffer = std::vector<char>(size);
 }
+
 Buffer::Buffer() {
 	return;
 }
@@ -11,16 +12,18 @@ Buffer::~Buffer() {
 	return;
 }
 
-std::vector<uint8_t> Buffer::getBuffer()
+//std::vector<uint8_t> Buffer::getBuffer()
+//{
+//	return mBuffer;
+//}
+
+std::vector<char>& Buffer::getBuffer()
 {
-	return (this->mBuffer);
+	return mBuffer;
 }
 
 char* Buffer::getBufferAsCharArray() {
-	int size = mBuffer.size();
-	char* arr = new char[size];
-	std::copy(mBuffer.begin(), mBuffer.end(), arr);
-	return arr;
+	return &mBuffer[0];
 }
 
 int Buffer::GetBufferLength() {
@@ -124,18 +127,18 @@ short Buffer::ReadShortBE(void) {
 	return value;
 }
 
-
-
 //TO DO: string conversion(not really converting anything)
 void Buffer::WriteStringBE(size_t index, std::string value) {
 
 }
+
 void Buffer::WriteStringBE(std::string value) {
 	for (int i = 0; i < value.size(); i++)
 	{
 		mBuffer.push_back(value[i]);
 	}
 }
+
 std::string Buffer::ReadStringBE(size_t index,int length) {
 	std::string phrase = "";
 	for (int i = index; i < length; i++)
@@ -144,7 +147,13 @@ std::string Buffer::ReadStringBE(size_t index,int length) {
 	}
 	return phrase;
 }
+
 std::string Buffer::ReadStringBE(void) {
-	return "";
+	std::string phrase = "";
+	for (int i = mReadIndex; i < mBuffer.size(); i++)
+	{
+		phrase += mBuffer[mReadIndex];
+	}
+	return phrase;
 }
 

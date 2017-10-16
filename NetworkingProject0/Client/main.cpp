@@ -25,10 +25,10 @@ Header* g_theHeader;
 
 //Protocols method headers
 void sendMessage(Header* theHeader,std::string message);
-
+std::string receiveMessage(Buffer& theBuffer);
 //TO DO: Client side connection
 int main(int argc, char** argv) {
-	g_theBuffer = new Buffer();
+	g_theBuffer = new Buffer(4096);
 	g_theHeader = new Header();
 	WSADATA wsaData;
 	SOCKET ConnectSocket = INVALID_SOCKET;
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
 		printf("WSAStartup failed: %d\n", iResult);
-		return 1;
+		//return 1;
 	}
 	printf("Winsock Initialized\n");
 
@@ -89,73 +89,27 @@ int main(int argc, char** argv) {
 	std::string userInput;
 	do {
 
-
+		userInput = "";
 		std::cout << "> ";
-		std::getline(std::cin, userInput);
+		std::cin >> userInput;
 
 		if (userInput.size() > 0)
 		{
 			int sendResult = send(ConnectSocket, userInput.c_str(), userInput.size() + 1, 0);
 			if (sendResult != SOCKET_ERROR)
 			{
-
+				char buf[4096] ;
 				int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 				if (bytesReceived > 0)
 				{
 					//do the conversion
+					std::string receivedPhrase = receiveMessage(*g_theBuffer);
+					std::cout << "Phrase: " << receivedPhrase << std::endl;
 				}
 			}
 		}
 
-
-
 	} while (userInput.size() > 0);
-
-		//Taking in user's input and quiting when detecting the 'q' (infinite loop)
-		//while (true)
-		//{
-		//	if (_kbhit()) 
-		//	{
-
-		//		//need to make this out buffer class
-		//		char ch, sendbuf[DEFAULT_BUFFER_LENGTH];
-		//		int i = 0;
-		//		while (((ch = _getche()) != '\r') && (i < DEFAULT_BUFFER_LENGTH - 1))
-		//		{
-		//			sendbuf[i] = ch;
-		//			i++;
-		//		}
-		//		sendbuf[i] = '\0';
-
-		//		sendMessage(g_theHeader, sendbuf);
-		//		//send the Server some sort of infomation form the client (this should be the Join/Leave/Send stuff)
-		//		iResult = send(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
-		//		if (iResult == SOCKET_ERROR) {
-		//			printf("socket() failed with error: %d\n", iResult);
-		//			closesocket(ConnectSocket);
-		//			WSACleanup();
-		//			return 1;
-		//		}
-
-		//		//if (ch == 'q')
-		//		//{
-		//		//	std::cout << "QUIT" << std::endl;
-
-		//			//this should be called when you want to exit the program NOT NEEDED NOW
-		//			//iResult = shutdown(ConnectSocket, SD_SEND);
-		//			//if (iResult == SOCKET_ERROR) {
-		//			//	printf("shutdown() failed with error: %d\n", iResult);
-		//			//	closesocket(ConnectSocket);
-		//			//	WSACleanup();
-		//			//	return 1;
-		//			//}
-
-		//			//closesocket(ConnectSocket);
-		//			//WSACleanup();
-		//		//	break;
-		//		//}
-		//	}
-		//}
 }
 
 void sendMessage(Header* theHeader, std::string message)
@@ -165,4 +119,12 @@ void sendMessage(Header* theHeader, std::string message)
 	g_theBuffer->WriteInt32BE(theHeader->message_id);
 	g_theBuffer->WriteInt32BE(theHeader->packet_length);
 	g_theBuffer->WriteStringBE(message);
+}
+
+std::string receiveMessage(Buffer& theBuffer) {
+	Header tempHeader;
+	//tempHeader.message_id = theBuffer.ReadInt32BE();
+	//tempHeader.packet_length = theBuffer.ReadInt32BE();
+	std::string message = theBuffer.ReadStringBE();
+	return message;
 }

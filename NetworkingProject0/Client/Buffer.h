@@ -30,10 +30,11 @@ public:
 	std::string ReadStringBE(size_t index,int length);
 	std::string ReadStringBE(void);
 	int GetBufferLength();
-	std::vector<uint8_t> getBuffer();
+	//std::vector<uint8_t> getBuffer();
+	std::vector<char>& getBuffer();
 	char* Buffer::getBufferAsCharArray();
 private:
-	std::vector<uint8_t> mBuffer;
+	std::vector<char> mBuffer;
 	int mReadIndex;
 	int mWriteIndex;
 };
