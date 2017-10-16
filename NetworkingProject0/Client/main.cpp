@@ -24,8 +24,12 @@ Buffer* g_theBuffer;
 Header* g_theHeader;
 
 //Protocols method headers
-void sendMessage(Header* theHeader,std::string message);
 std::string receiveMessage(Buffer& theBuffer);
+void readInput(std::vector<std::string>& theStrings, std::string input);
+void processCommands(std::vector<std::string>& theCommands);
+std::vector<std::string> theCommands;
+
+
 //TO DO: Client side connection
 int main(int argc, char** argv) {
 	g_theBuffer = new Buffer(4096);
@@ -51,6 +55,7 @@ int main(int argc, char** argv) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
+	//get the address info 
 	iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
@@ -58,7 +63,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-
+	//set up the socket
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
 		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if (ConnectSocket == INVALID_SOCKET) {
@@ -66,7 +71,7 @@ int main(int argc, char** argv) {
 			WSACleanup();
 			return 1;
 		}
-
+		//connect to the socket
 		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
 		if (iResult == SOCKET_ERROR) {
 			closesocket(ConnectSocket);
@@ -84,8 +89,14 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 	printf("Connected to Server\n");
-
-
+	//display commands before loop
+	std::cout << "=======================================" << std::endl;
+	std::cout << "               Commands:               " << std::endl;
+	std::cout << "=======================================" << std::endl;
+	std::cout << "Leave Room	: LR (a-z)" << std::endl;
+	std::cout << "Join Room		: JR (a-z)" << std::endl;
+	std::cout << "Send Message  : SM (followed by message)" << std::endl;
+	//string for user input
 	std::string userInput;
 	do {
 
@@ -95,11 +106,15 @@ int main(int argc, char** argv) {
 
 		if (userInput.size() > 0)
 		{
-			int sendResult = send(ConnectSocket, userInput.c_str(), userInput.size() + 1, 0);
+			//read the user input
+			readInput(theCommands, userInput);
+			//process the commands from input 
+			processCommands(theCommands);
+			//send command
+			int sendResult = send(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
 			if (sendResult != SOCKET_ERROR)
 			{
-				char buf[4096] ;
-				int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+				int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
 				if (bytesReceived > 0)
 				{
 					//do the conversion
@@ -112,19 +127,77 @@ int main(int argc, char** argv) {
 	} while (userInput.size() > 0);
 }
 
-void sendMessage(Header* theHeader, std::string message)
-{
-	theHeader->message_id = 1;
-	theHeader->packet_length = message.length();
-	g_theBuffer->WriteInt32BE(theHeader->message_id);
-	g_theBuffer->WriteInt32BE(theHeader->packet_length);
-	g_theBuffer->WriteStringBE(message);
-}
 
+//Name:			receiveMessage
+//Purpose:		takes in the message from the server and processes it
 std::string receiveMessage(Buffer& theBuffer) {
 	Header tempHeader;
-	//tempHeader.message_id = theBuffer.ReadInt32BE();
-	//tempHeader.packet_length = theBuffer.ReadInt32BE();
+	tempHeader.message_id = theBuffer.ReadInt32BE();
+	tempHeader.packet_length = theBuffer.ReadInt32BE();
 	std::string message = theBuffer.ReadStringBE();
 	return message;
+}
+
+//Name:			processCommands
+//Purpose:		processes the user commands and populates the buffer according to message type
+void processCommands(std::vector<std::string>& theCommands) {
+	if (theCommands.size() > 0)
+	{
+		//if the command is to leave room
+		if (theCommands[0] == "LR" || theCommands[0] == "lr")
+		{
+			g_theHeader = new Header();
+			g_theHeader->message_id = 3;
+			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
+			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+		}
+
+		//if the command is to join room
+		if (theCommands[0] == "JR" || theCommands[0] == "jr")
+		{
+			g_theHeader = new Header();
+			g_theHeader->message_id = 2;
+			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
+			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+		}
+
+		//if the command is to send message
+		if (theCommands[0] == "SM" || theCommands[0] == "sm")
+		{
+			g_theHeader = new Header();
+			g_theHeader->message_id = 1;
+			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
+			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+		}
+	}
+}
+
+
+//Name:			readInput
+//Purpose:		parses the input from the user and separates the first and second strings
+void readInput(std::vector<std::string>& theStrings, std::string input) {
+	std::string tempString = "";
+	for (int i = 0; i < input.size(); i++)
+	{
+		//if theres a space at the start
+		if (input[i] == ' '&& i == 0)
+		{
+			continue;
+		}
+
+		//if theres a space after the first two letters and the temp string has letter already
+		if (input[i] == ' '&& i == 3 && tempString.size() >0)
+		{
+			theStrings.push_back(tempString);
+			continue;
+		}
+
+		//otherwise just add all characters and spaces
+		tempString += input[i];
+		if (tempString != "")
+			theStrings.push_back(tempString);
+	}
 }
