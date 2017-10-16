@@ -12,10 +12,6 @@ Buffer::~Buffer() {
 	return;
 }
 
-//std::vector<uint8_t> Buffer::getBuffer()
-//{
-//	return mBuffer;
-//}
 
 std::vector<char>& Buffer::getBuffer()
 {
@@ -148,9 +144,9 @@ std::string Buffer::ReadStringBE(size_t index,int length) {
 	return phrase;
 }
 
-std::string Buffer::ReadStringBE(void) {
+std::string Buffer::ReadStringBE(int length) {
 	std::string phrase = "";
-	for (int i = mReadIndex; i < mBuffer.size(); i++)
+	for (int i = mReadIndex; i < length; i++)
 	{
 		phrase += mBuffer[mReadIndex];
 	}

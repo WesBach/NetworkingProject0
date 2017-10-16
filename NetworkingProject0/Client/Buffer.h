@@ -28,7 +28,7 @@ public:
 	void WriteStringBE(size_t index, std::string value);
 	void WriteStringBE(std::string value);
 	std::string ReadStringBE(size_t index,int length);
-	std::string ReadStringBE(void);
+	std::string ReadStringBE(int length);
 	int GetBufferLength();
 	//std::vector<uint8_t> getBuffer();
 	std::vector<char>& getBuffer();

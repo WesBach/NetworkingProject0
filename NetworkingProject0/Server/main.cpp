@@ -30,6 +30,7 @@ public:
 };
 SocketInfo* g_curSocketInfo = new SocketInfo();
 
+Buffer* g_theBuffer;
 //Header struct for packet length and message id
 class Header {
 public:
@@ -43,6 +44,7 @@ public:
 //get socket function for populating the socket info and pushing back onto
 void addSocketInformation(SOCKET socket);
 void freeSocketInformation(int Index);
+std::string parseMessage(int messageLength);
 
 //Protocols method headers
 void sendMessage(Header &theHeader,
@@ -61,6 +63,8 @@ void receiveMessage(Header &theHeader,
 );
 void joinRoom(SOCKET* joinSocket, char &roomName);
 void leaveRoom(std::string &roomName);
+
+std::vector<std::string> readPacket(int packetlength);
 
 //sockets
 std::vector<SocketInfo> g_theSockets;
@@ -146,15 +150,7 @@ int main()
 	{
 		// Make a copy of the master file descriptor set, this is SUPER important because
 		// the call to select() is _DESTRUCTIVE_. The copy only contains the sockets that
-		// are accepting inbound connection requests OR messages. 
-
-		// E.g. You have a server and it's master file descriptor set contains 5 items;
-		// the listening socket and four clients. When you pass this set into select(), 
-		// only the sockets that are interacting with the server are returned. Let's say
-		// only one client is sending a message at that time. The contents of 'copy' will
-		// be one socket. You will have LOST all the other sockets.
-
-		// SO MAKE A COPY OF THE MASTER LIST TO PASS INTO select() !!!
+		// are accepting inbound connection requests OR messages.
 
 		fd_set copy = master;
 
@@ -229,37 +225,42 @@ int main()
 	//clean up
 	closesocket(ListenSocket);
 	WSACleanup();
-
-	char tempstr;
-	std::cin >> tempstr;
 }
 
+std::string parseMessage(int messageLength) {
+	std::string tempMessage = "";
+	tempMessage += g_theBuffer->ReadStringBE(messageLength);
+}
 
-void ReadPacket(SOCKET socket)
+std::vector<std::string> readPacket(int packetLength)
 {
-	//int result = recv(socket, &buffer, buflen, flags);
-	//if (result = INVALID_SOCKET)
+	std::string message = "";
+	std::string command = "";
+	int messageId = 0;
+	int messageLength = 0;
+	int commandLength = 0;
+
+	////if the message is just a messg
+	//if (packetLength == 3)
 	//{
-	//	printf("Recv error, %d\n", WSAGetLastError());
-	//	//remove from sockets
-	//	return;
-	//}
-	//else if (result == 0)
-	//{
-	//	printf("client has disconnected.\n");
+	//	message = "";
+	//	messageId =g_theBuffer->ReadInt32BE();
+	//	messageLength = g_theBuffer->ReadInt32BE();
+
+	//	message = parseMessage(messageLength);
 	//}
 
-	//BytesRecv += result;
+	//if the message is specific
+	if (packetLength > 3)
+	{
+		message = "";
 
-	//if (BytesRecv > 4)
-	//{
-	//	BufData.length = //convert length here
-	//}
-
-	//if (BufData.bytesReveiced == BufData.length)
-	//{
-	//	ParseMessage(BufData, toString());
-	//}
+		messageId = g_theBuffer->ReadInt32BE();
+		commandLength = g_theBuffer->ReadInt32BE();
+		command = parseMessage(commandLength);
+		messageLength = g_theBuffer->ReadInt32BE();
+		message = parseMessage(commandLength);
+	}
 }
 
 void addSocketInformation(SOCKET s)

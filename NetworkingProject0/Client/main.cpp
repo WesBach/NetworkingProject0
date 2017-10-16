@@ -134,7 +134,7 @@ std::string receiveMessage(Buffer& theBuffer) {
 	Header tempHeader;
 	tempHeader.message_id = theBuffer.ReadInt32BE();
 	tempHeader.packet_length = theBuffer.ReadInt32BE();
-	std::string message = theBuffer.ReadStringBE();
+	std::string message = theBuffer.ReadStringBE(tempHeader.packet_length);
 	return message;
 }
 
@@ -149,9 +149,13 @@ void processCommands(std::vector<std::string>& theCommands) {
 			g_theHeader = new Header();
 			g_theHeader->message_id = 3;
 			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
-			g_theHeader->packet_length = theCommands[1].size();
+			g_theHeader->packet_length = theCommands[0].size();
 			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+			g_theBuffer->WriteStringBE(theCommands[0]);
+			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteStringBE(theCommands[1]);
 		}
+		
 
 		//if the command is to join room
 		if (theCommands[0] == "JR" || theCommands[0] == "jr")
@@ -159,8 +163,11 @@ void processCommands(std::vector<std::string>& theCommands) {
 			g_theHeader = new Header();
 			g_theHeader->message_id = 2;
 			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
-			g_theHeader->packet_length = theCommands[1].size();
+			g_theHeader->packet_length = theCommands[0].size();
 			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+			g_theBuffer->WriteStringBE(theCommands[0]);
+			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteStringBE(theCommands[1]);
 		}
 
 		//if the command is to send message
@@ -169,9 +176,13 @@ void processCommands(std::vector<std::string>& theCommands) {
 			g_theHeader = new Header();
 			g_theHeader->message_id = 1;
 			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
-			g_theHeader->packet_length = theCommands[1].size();
+			g_theHeader->packet_length = theCommands[0].size();
 			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+			g_theBuffer->WriteStringBE(theCommands[0]);
+			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteStringBE(theCommands[1]);
 		}
+		
 	}
 }
 
