@@ -7,13 +7,18 @@
 #include "Buffer.h"
 #include <iostream>
 #include <sstream>
+#include <map>
 
 #pragma comment(lib, "Ws2_32.lib")
 #define DEFAULT_PORT "5000"	//was 8899
 #define DEFAULT_BUFFER_LENGTH 1024
 //socket info structure to store all the individual socket information
 
+//Globel variables
 enum message_ID { JOINROOM, LEAVEROOM , SENDMESSAGE, RECEIVEMESSAGE };
+std::map<char, std::vector<SOCKET*>> roomMap;
+fd_set master;
+SOCKET ListenSocket;
 
 class SocketInfo {
 public:
@@ -54,7 +59,7 @@ void receiveMessage(Header &theHeader,
 	int &roomNameLength,
 	std::string &roomName
 );
-void joinRoom(std::string &roomName);
+void joinRoom(SOCKET* joinSocket, char &roomName);
 void leaveRoom(std::string &roomName);
 
 //sockets
@@ -63,9 +68,7 @@ int g_IDCounter = 0;
 
 int main()
 {
-	SOCKET ListenSocket;
 	SOCKET AcceptSocket;
-	fd_set master;
 	fd_set readSet;
 	fd_set writeSet;
 	FD_ZERO(&readSet);
@@ -77,6 +80,13 @@ int main()
 	DWORD flags;
 	DWORD RecvBytes;
 	DWORD SendBytes;
+
+	//populating the roomMate with rooms (a-z)
+	char *alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	for (int i = 0; alpha[i] != '\0'; i++)
+	{
+		roomMap[alpha[i]];
+	}
 
 	//create a socket for the server with the port 8899
 	ZeroMemory(&addressInfo, sizeof(addressInfo));
@@ -292,13 +302,29 @@ void receiveMessage(Header & theHeader, int & senderNameLength, std::string & se
 	std::cout << "thanks" << std::endl;
 }
 
-void joinRoom(std::string &roomName)
-{
-	Header* header = new Header();
 
-	header->message_id = JOINROOM;
-	g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
-	g_curSocketInfo->buffer->WriteStringBE(roomName);
+void joinRoom(SOCKET* joinSocket, char &roomName)
+{
+	for (std::map<char, std::vector<SOCKET*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
+	{
+		if (roomName == it->first)
+		{
+			roomMap[roomName].push_back(joinSocket);
+		}
+	}
+
+	for (int i = 0; i < master.fd_count; i++)
+	{
+		SOCKET outSock = master.fd_array[i];
+		if (outSock != ListenSocket && outSock != *joinSocket)
+		{
+			send(outSock, "A New User has joined the room: " + roomName, 2 + 1, 0);
+		}
+	}
+
+	//add the user who wants to join to the roomMap with the rom they specified
+	//g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
+	//g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
 void leaveRoom(std::string &roomName)
