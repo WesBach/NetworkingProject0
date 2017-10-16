@@ -19,38 +19,15 @@ enum message_ID { JOINROOM, LEAVEROOM , SENDMESSAGE, RECEIVEMESSAGE };
 std::map<char, std::vector<SOCKET*>> roomMap;
 fd_set master;
 SOCKET ListenSocket;
-
 Buffer* g_theBuffer;
-//Header struct for packet length and message id
-class Header {
-public:
-	//[packet_length][message_id]
-	int packet_length;			//in bytes
-	int message_id;				//What user is trying to do
-};
-
-void freeSocketInformation(int Index);
 std::string parseMessage(int messageLength);
 
 //Protocols method headers
-void sendMessage(Header &theHeader,
-	int &roomNameLength,
-	std::string &roomName,
-	int &messageLength,
-	std::string &message
-);
-void receiveMessage(Header &theHeader,
-	int &senderNameLength,
-	std::string &senderName,
-	int &messageLength,
-	std::string &message,
-	int &roomNameLength,
-	std::string &roomName
-);
+void sendMessage(SOCKET* sendingUser, char* message);
 void joinRoom(SOCKET* joinSocket, char &roomName);
-void leaveRoom(std::string &roomName);
-
+void leaveRoom(SOCKET* leaveSocket, char &roomName);
 std::vector<std::string> readPacket(int packetlength);
+void buildMessage(std::string message);
 
 int g_IDCounter = 0;
 
@@ -198,6 +175,7 @@ int main()
 std::string parseMessage(int messageLength) {
 	std::string tempMessage = "";
 	tempMessage += g_theBuffer->ReadStringBE(messageLength);
+	return tempMessage;
 }
 
 std::vector<std::string> readPacket(int packetLength)
@@ -207,6 +185,7 @@ std::vector<std::string> readPacket(int packetLength)
 	int messageId = 0;
 	int messageLength = 0;
 	int commandLength = 0;
+	std::vector<std::string> receviedMessages;
 
 	////if the message is just a messg
 	//if (packetLength == 3)
@@ -228,7 +207,12 @@ std::vector<std::string> readPacket(int packetLength)
 		command = parseMessage(commandLength);
 		messageLength = g_theBuffer->ReadInt32BE();
 		message = parseMessage(commandLength);
+		receviedMessages.push_back(command);
+		receviedMessages.push_back(message);
 	}
+
+	//fix this 
+	return std::vector<std::string>();
 }
 
 void sendMessage(SOCKET* sendingUser, char* message)
