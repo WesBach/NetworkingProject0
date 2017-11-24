@@ -25,9 +25,9 @@ public:
 	short ReadShortBE(void);
 
 	//TO DO: string conversion(not really converting anything)
-	void WriteStringBE(size_t index, std::string value);
+	//void WriteStringBE(size_t index, std::string value);
 	void WriteStringBE(std::string value);
-	std::string ReadStringBE(size_t index,int length);
+	std::string ReadStringBE(size_t index, int length);
 	std::string ReadStringBE(int length);
 	int GetBufferLength();
 	//std::vector<uint8_t> getBuffer();

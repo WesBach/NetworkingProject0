@@ -1,6 +1,7 @@
 #define UNICODE
 #define WIN_32_CHAT_APP_SERVER
 
+//#include <Windows.h>   freaks out if i include this
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include "Buffer.h"
@@ -9,29 +10,29 @@
 #include <map>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define DEFAULT_PORT "5000"	
+#define DEFAULT_PORT "5000"	//was 8899
 #define DEFAULT_BUFFER_LENGTH 1024
+//socket info structure to store all the individual socket information
 
 //Globel variables
-enum message_ID { JOINROOM, LEAVEROOM , SENDMESSAGE, RECEIVEMESSAGE };
+enum message_ID { JOINROOM, LEAVEROOM, SENDMESSAGE, RECEIVEMESSAGE };
 std::map<char, std::vector<SOCKET*>> roomMap;
 fd_set master;
 SOCKET ListenSocket;
-Buffer* g_theBuffer;
+Buffer* g_theBuffer = new Buffer();
 std::string parseMessage(int messageLength);
-std::vector<std::string> readPacket(int packetlength);
 
 //Protocols method headers
-void sendMessage(SOCKET* sendingUser, char* message);
+void sendMessage(SOCKET* sendingUser, std::string message);
 void joinRoom(SOCKET* joinSocket, char &roomName);
 void leaveRoom(SOCKET* leaveSocket, char &roomName);
+std::vector<std::string> readPacket(int packetlength);
 void buildMessage(std::string message);
 
 int g_IDCounter = 0;
 
 int main()
 {
-	//Socket Information
 	SOCKET AcceptSocket;
 	fd_set readSet;
 	fd_set writeSet;
@@ -45,14 +46,14 @@ int main()
 	DWORD RecvBytes;
 	DWORD SendBytes;
 
-	//Populating the roomName with rooms (a-z)
-	char *alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	//populating the roomName with rooms (a-z)
+	char *alpha = "abcdefghijklmnopqrstuvwxyz";
 	for (int i = 0; alpha[i] != '\0'; i++)
 	{
 		roomMap[alpha[i]];
 	}
 
-	//Create a socket for the server
+	//create a socket for the server with the port 8899
 	ZeroMemory(&addressInfo, sizeof(addressInfo));
 	addressInfo.ai_family = AF_INET;
 	addressInfo.ai_socktype = SOCK_STREAM;
@@ -64,8 +65,10 @@ int main()
 		printf("WSAStartup failed: %d\n", iResult);
 		return 1;
 	}
-	
-	//Allocating the listen Socket
+
+	// Socket()
+	//socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+
 	ListenSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (ListenSocket == INVALID_SOCKET) {
 		printf("socket() failed with error %d\n", WSAGetLastError());
@@ -74,7 +77,7 @@ int main()
 	}
 	printf("Created Listen Socket\n");
 
-	// Bind()ing the listen Socket
+	// Bind()
 	iResult = getaddrinfo(NULL, DEFAULT_PORT, &addressInfo, &result);
 	iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
 	if (iResult == SOCKET_ERROR) {
@@ -86,7 +89,7 @@ int main()
 	}
 	printf("Bind Listen Socket\n");
 
-	//Ready to listen for incoming requests
+	// Listen()
 	if (listen(ListenSocket, 5)) {
 		printf("listen() failed with error: %d\n", WSAGetLastError());
 		closesocket(ListenSocket);
@@ -104,14 +107,20 @@ int main()
 	char tempBreak;
 	bool running = true;
 
-	//Looping to check for the client sockets
 	while (running)
 	{
-		//saving a copy of the master so the select doesnt destroy the sockets
-		fd_set copy = master;
+		// Make a copy of the master file descriptor set, this is SUPER important because
+		// the call to select() is _DESTRUCTIVE_. The copy only contains the sockets that
+		// are accepting inbound connection requests OR messages.
 
-		// See who's talking to us
-		int socketCount = select(0, &copy, nullptr, nullptr, nullptr);
+		fd_set copy = master;
+		//delay value for the select call.
+		timeval t_Delay;
+		t_Delay.tv_sec = 1; // seconds
+		t_Delay.tv_usec = 0; // micro seconds
+
+							 // See who's talking to us
+		int socketCount = select(0, &copy, nullptr, nullptr, &t_Delay);
 
 		// Loop through all the current connections / potential connect
 		for (int i = 0; i < socketCount; i++)
@@ -129,18 +138,19 @@ int main()
 				FD_SET(client, &master);
 
 				// Send a welcome message to the connected client
-				//string welcomeMsg = "Welcome to the Awesome Chat Server!\r\n";
+				std::string welcomeMsg = "Welcome to the Awesome Chat Server!";
 				//send(client, welcomeMsg.c_str(), welcomeMsg.size() + 1, 0);
+				sendMessage(&ListenSocket, welcomeMsg);
 			}
 			else // It's an inbound message
 			{
-				g_theBuffer = new Buffer(4096);
+				//g_theBuffer = new Buffer();
 
 				// Receive message
-				int bytesIn = recv(sock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+				int bytesIn;
+				bytesIn = recv(sock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 
-				//check validity
-				if (bytesIn <= 0)
+				if (bytesIn < 0)
 				{
 					// Drop the client
 					closesocket(sock);
@@ -149,17 +159,27 @@ int main()
 				else
 				{
 					// Send message to other clients, and definately NOT the listening socket
-
-					for (int i = 0; i < master.fd_count; i++)
+					std::vector<std::string> results = readPacket(bytesIn);
+					if (results.size() > 1)
 					{
-						SOCKET outSock = master.fd_array[i];
-						if (outSock != ListenSocket && outSock != sock)
+						//if (theCommands[0] == "SM" || theCommands[0] == "sm")
+						if (results[0] == "SM" || results[0] == "sm")
 						{
-							send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+							sendMessage(&sock, results[1]);
+						}
+						else if (results[0] == "JR" || results[0] == "jr")
+						{
+							joinRoom(&sock, results[1][0]);
+						}
+						else if (results[0] == "LR" || results[0] == "lr")
+						{
+							leaveRoom(&sock, results[1][0]);
 						}
 					}
 				}
 			}
+			//clear the buffer for the next set of info
+			g_theBuffer = new Buffer();
 		}
 	}
 
@@ -168,14 +188,12 @@ int main()
 	WSACleanup();
 }
 
-//Read back the message that was in the buffer
 std::string parseMessage(int messageLength) {
 	std::string tempMessage = "";
 	tempMessage += g_theBuffer->ReadStringBE(messageLength);
 	return tempMessage;
 }
 
-//Read the sent information (the packet) 
 std::vector<std::string> readPacket(int packetLength)
 {
 	std::string message = "";
@@ -189,7 +207,7 @@ std::vector<std::string> readPacket(int packetLength)
 	//if (packetLength == 3)
 	//{
 	//	message = "";
-	//	messageId =g_theBuffer->ReadInt32BE();
+	//	messageId = g_theBuffer->ReadInt32BE();
 	//	messageLength = g_theBuffer->ReadInt32BE();
 
 	//	message = parseMessage(messageLength);
@@ -199,12 +217,17 @@ std::vector<std::string> readPacket(int packetLength)
 	if (packetLength > 3)
 	{
 		message = "";
-
+		//read the packet id and the command length
 		messageId = g_theBuffer->ReadInt32BE();
+		//get the command length
 		commandLength = g_theBuffer->ReadInt32BE();
+		//read the command 
 		command = parseMessage(commandLength);
+		//get message length
 		messageLength = g_theBuffer->ReadInt32BE();
+		//get message
 		message = parseMessage(commandLength);
+		//push back the messages
 		receviedMessages.push_back(command);
 		receviedMessages.push_back(message);
 	}
@@ -212,30 +235,27 @@ std::vector<std::string> readPacket(int packetLength)
 	return receviedMessages;
 }
 
-//Enables a user to send a message in a room (or multiple rooms)
-void sendMessage(SOCKET* sendingUser, char* message)
+void sendMessage(SOCKET* sendingUser, std::string message)
 {
-	g_theBuffer = new Buffer(4096);
+	g_theBuffer = new Buffer();
 	buildMessage(message);
 	for (int i = 0; i < master.fd_count; i++)
 	{
 		SOCKET outSock = master.fd_array[i];
 		if (outSock != ListenSocket && outSock != *sendingUser)
 		{
-			send(outSock, message, 2 + 1, 0);
+			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 		}
 	}
 }
 
-//builds a message
 void buildMessage(std::string message)
 {
-	g_theBuffer = new Buffer(4096);
+	g_theBuffer = new Buffer();
 	g_theBuffer->WriteInt32BE(message.size());
 	g_theBuffer->WriteStringBE(message);
 }
 
-//Enables the user to join a room
 void joinRoom(SOCKET* joinSocket, char &roomName)
 {
 	for (std::map<char, std::vector<SOCKET*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
@@ -253,7 +273,7 @@ void joinRoom(SOCKET* joinSocket, char &roomName)
 		buildMessage(message);
 		if (outSock != ListenSocket && outSock != *joinSocket)
 		{
-			send(outSock,  g_theBuffer->getBufferAsCharArray() , g_theBuffer->GetBufferLength(), 0);
+			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 		}
 	}
 
@@ -262,8 +282,6 @@ void joinRoom(SOCKET* joinSocket, char &roomName)
 	//g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
-
-//Enables a user to leave a room that they are in
 void leaveRoom(SOCKET* leaveSocket, char &roomName)
 {
 	for (std::map<char, std::vector<SOCKET*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
@@ -276,7 +294,7 @@ void leaveRoom(SOCKET* leaveSocket, char &roomName)
 				{
 					it->second.erase(iter);
 				}
-			}	
+			}
 		}
 	}
 
@@ -287,7 +305,7 @@ void leaveRoom(SOCKET* leaveSocket, char &roomName)
 		std::string message = "A User has Left the room : " + roomName;
 		if (outSock != ListenSocket && outSock != *leaveSocket)
 		{
-			send(outSock,g_theBuffer->getBufferAsCharArray(),g_theBuffer->GetBufferLength(), 0);
+			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 		}
 	}
 }

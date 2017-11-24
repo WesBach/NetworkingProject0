@@ -1,8 +1,10 @@
+
 #include "Buffer.h"
 #include <string>
 #include <iostream>
 #include <conio.h>
 
+//#include <Windows.h>
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #pragma comment (lib, "Ws2_32.lib")
@@ -10,7 +12,6 @@
 #define DEFAULT_PORT "5000"
 #define DEFAULT_BUFFER_LENGTH 512
 
-//Header class for the message
 class Header {
 public:
 	//[packet_length][message_id]
@@ -18,7 +19,7 @@ public:
 	int32_t message_id;				//What user is trying to do
 };
 
-//Global buffer 
+//global buffer 
 Buffer* g_theBuffer;
 Header* g_theHeader;
 
@@ -28,8 +29,10 @@ void readInput(std::vector<std::string>& theStrings, std::string input);
 void processCommands(std::vector<std::string>& theCommands);
 std::vector<std::string> theCommands;
 
+
+//TO DO: Client side connection
 int main(int argc, char** argv) {
-	g_theBuffer = new Buffer(4096);
+	g_theBuffer = new Buffer();
 	g_theHeader = new Header();
 	WSADATA wsaData;
 	SOCKET ConnectSocket = INVALID_SOCKET;
@@ -37,6 +40,7 @@ int main(int argc, char** argv) {
 	struct addrinfo* ptr = NULL;
 	struct addrinfo hints;
 	int iResult;
+	ULONG iMode = 0;
 
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -52,7 +56,7 @@ int main(int argc, char** argv) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
-	//Get the address info 
+	//get the address info 
 	iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
@@ -85,6 +89,11 @@ int main(int argc, char** argv) {
 		WSACleanup();
 		return 1;
 	}
+
+	iResult = ioctlsocket(ConnectSocket, FIONBIO, &iMode);
+	if (iResult != NO_ERROR)
+		printf("ioctlsocket failed with error: %ld\n", iResult);
+
 	printf("Connected to Server\n");
 	//display commands before loop
 	std::cout << "=======================================" << std::endl;
@@ -94,36 +103,53 @@ int main(int argc, char** argv) {
 	std::cout << "Join Room		: JR (a-z)" << std::endl;
 	std::cout << "Send Message  : SM (followed by message)" << std::endl;
 	//string for user input
-	std::string userInput;
-	do {
+	std::string userInputA;
+	std::string userInputB;
+	int loopControl = 0;
 
-		userInput = "";
+	while (loopControl == 0)
+	{
+		userInputA = "";
+		userInputB = "";
 		std::cout << "> ";
-		std::cin >> userInput;
+		std::cin >> userInputA;
+		std::cin >> userInputB;
+		theCommands.push_back(userInputA);
+		theCommands.push_back(userInputB);
 
-		if (userInput.size() > 0)
+		if (userInputA.size() > 0)
 		{
 			//read the user input
-			readInput(theCommands, userInput);
+			//readInput(theCommands, userInput);
 			//process the commands from input 
 			processCommands(theCommands);
 			//send command
 			int sendResult = send(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
-			if (sendResult != SOCKET_ERROR)
+			//check for error
+			if (sendResult != 0)
 			{
-				int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
-				if (bytesReceived > 0)
-				{
-					//do the conversion
-					std::string receivedPhrase = receiveMessage(*g_theBuffer);
-					std::cout << "Phrase: " << receivedPhrase << std::endl;
-				}
+				printf("ioctlsocket failed with error: %ld\n", sendResult);
 			}
 		}
 
-	} while (userInput.size() > 0);
-}
+		int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
+		if (bytesReceived == 0)
+		{
+			//do the conversion
+			std::string receivedPhrase = receiveMessage(*g_theBuffer);
+			std::cout << "Phrase: " << receivedPhrase << std::endl;
+		}
+		else {//print error message
+			printf("ioctlsocket failed with error: %ld\n", bytesReceived);
+		}
 
+		//clear the commands so they don't build up
+		theCommands.clear();
+		//clear the buffer for the next set of info
+		g_theBuffer = new Buffer();
+	}
+
+}
 
 //Name:			receiveMessage
 //Purpose:		takes in the message from the server and processes it
@@ -144,14 +170,16 @@ void processCommands(std::vector<std::string>& theCommands) {
 		{
 			g_theHeader = new Header();
 			g_theHeader->message_id = 3;
+			//write header
 			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
 			g_theHeader->packet_length = theCommands[0].size();
 			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
 			g_theBuffer->WriteStringBE(theCommands[0]);
-			g_theHeader->packet_length = theCommands[1].size();
+			//write second data
+			g_theBuffer->WriteInt32BE(theCommands[1].size());
 			g_theBuffer->WriteStringBE(theCommands[1]);
 		}
-		
+
 
 		//if the command is to join room
 		if (theCommands[0] == "JR" || theCommands[0] == "jr")
@@ -162,7 +190,7 @@ void processCommands(std::vector<std::string>& theCommands) {
 			g_theHeader->packet_length = theCommands[0].size();
 			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
 			g_theBuffer->WriteStringBE(theCommands[0]);
-			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteInt32BE(theCommands[1].size());
 			g_theBuffer->WriteStringBE(theCommands[1]);
 		}
 
@@ -175,10 +203,10 @@ void processCommands(std::vector<std::string>& theCommands) {
 			g_theHeader->packet_length = theCommands[0].size();
 			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
 			g_theBuffer->WriteStringBE(theCommands[0]);
-			g_theHeader->packet_length = theCommands[1].size();
+			g_theBuffer->WriteInt32BE(theCommands[1].size());
 			g_theBuffer->WriteStringBE(theCommands[1]);
 		}
-		
+
 	}
 }
 

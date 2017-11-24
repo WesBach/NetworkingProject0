@@ -1,31 +1,32 @@
 #include "Buffer.h"
 
 Buffer::Buffer(size_t size) {
-	this->mBuffer = std::vector<char>(size);
+	this->mBuffer.resize(size);
 }
 
-//Constructor
 Buffer::Buffer() {
+	this->mBuffer.resize(4096);
 	return;
 }
 
-//Destructor
 Buffer::~Buffer() {
 	return;
 }
 
-//getter
+//std::vector<uint8_t> Buffer::getBuffer()
+//{
+//	return mBuffer;
+//}
+
 std::vector<char>& Buffer::getBuffer()
 {
 	return mBuffer;
 }
 
-//returns the buffer as a vector of chars
 char* Buffer::getBufferAsCharArray() {
 	return &mBuffer[0];
 }
 
-//gets buffer length
 int Buffer::GetBufferLength() {
 	return this->mBuffer.size();
 }
@@ -51,13 +52,13 @@ int Buffer::ReadInt32BE(size_t index) {
 }
 
 void Buffer::WriteInt32BE(int32_t value) {
-	mBuffer.push_back(value >> 24);
+	mBuffer[mWriteIndex] = value >> 24;
 	++mWriteIndex;
-	mBuffer.push_back(value >> 16); //bit shift by 8 to store 8 bits in each buffer slot
+	mBuffer[mWriteIndex] = value >> 16; //bit shift by 8 to store 8 bits in each buffer slot
 	++mWriteIndex;
-	mBuffer.push_back(value >> 8);
+	mBuffer[mWriteIndex] = value >> 8;
 	++mWriteIndex;
-	mBuffer.push_back(value);
+	mBuffer[mWriteIndex] = value;
 	++mWriteIndex;
 }
 
@@ -81,9 +82,9 @@ void Buffer::WriteUShortBE(size_t index, unsigned short value) {
 }
 
 void Buffer::WriteUShortBE(unsigned short value) {
-	mBuffer.push_back(value >> 8);
+	mBuffer[mWriteIndex] = value >> 8;
 	++mWriteIndex;
-	mBuffer.push_back(value);
+	mBuffer[mWriteIndex] = value;
 	++mWriteIndex;
 }
 
@@ -109,9 +110,9 @@ void Buffer::WriteShortBE(size_t index, short value) {
 }
 
 void Buffer::WriteShortBE(short value) {
-	mBuffer.push_back(value >> 8);
+	mBuffer[mWriteIndex] = value >> 8;
 	++mWriteIndex;
-	mBuffer.push_back(value);
+	mBuffer[mWriteIndex] = value;
 	++mWriteIndex;
 }
 
@@ -127,7 +128,7 @@ short Buffer::ReadShortBE(void) {
 	return value;
 }
 
-//TO DO: string conversion(not really converting anything)
+////TO DO: string conversion(not really converting anything)
 //void Buffer::WriteStringBE(size_t index, std::string value) {
 //
 //}
@@ -135,15 +136,17 @@ short Buffer::ReadShortBE(void) {
 void Buffer::WriteStringBE(std::string value) {
 	for (int i = 0; i < value.size(); i++)
 	{
-		mBuffer.push_back(value[i]);
+		mBuffer[mWriteIndex] = value[i];
+		mWriteIndex++;
 	}
 }
 
-std::string Buffer::ReadStringBE(size_t index,int length) {
+std::string Buffer::ReadStringBE(size_t index, int length) {
 	std::string phrase = "";
 	for (int i = index; i < length; i++)
 	{
 		phrase += mBuffer[mReadIndex];
+		mReadIndex++;
 	}
 	return phrase;
 }
@@ -153,6 +156,7 @@ std::string Buffer::ReadStringBE(int length) {
 	for (int i = mReadIndex; i < length; i++)
 	{
 		phrase += mBuffer[mReadIndex];
+		mReadIndex++;
 	}
 	return phrase;
 }
