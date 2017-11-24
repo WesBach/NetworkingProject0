@@ -31,6 +31,14 @@ void buildMessage(std::string message);
 
 int g_IDCounter = 0;
 
+//User sockets and buffer struct
+struct userInfo
+{
+	SOCKET userSocket;
+	Buffer* userBuffer;
+};
+
+
 int main()
 {
 	SOCKET AcceptSocket;
