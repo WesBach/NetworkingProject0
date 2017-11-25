@@ -114,6 +114,8 @@ int main(int argc, char** argv) {
 	int loopControl = 0;
 	int bytesReceived = 0;
 
+	void printScreenData();
+
 	while (true)
 	{
 		//userInputA = "";	
