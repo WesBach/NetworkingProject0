@@ -121,47 +121,47 @@ int main(int argc, char** argv) {
 		//theCommands.push_back(userInputA);
 		//theCommands.push_back(userInputB);
 
-		//if (_kbhit()) {
-		//	char c = _getch();
-		//	if (c == '\q')
-		//	{
-		//		//no error checking for the room after (right now assume that its correct)
-		//		if (userInput.find("JR ") && userInput.length() > 3)
-		//		{
-		//			command = userInput.substr(0, 2);
-		//			roomName = userInput.substr(3);
+		if (_kbhit()) {
+			char c = _getch();
+			if (c == '\r')
+			{
+				//no error checking for the room after (right now assume that its correct)
+				if (userInput.find("JR ") && userInput.length() > 3)
+				{
+					command = userInput.substr(0, 2);
+					roomName = userInput.substr(3);
 
-		//			theCommands.push_back(command);
-		//			theCommands.push_back(roomName);
+					theCommands.push_back(command);
+					theCommands.push_back(roomName);
 
-		//			isMessagePopulated = true;
-		//		}
-		//		else if (userInput.find("LR ") && userInput.length() > 3)
-		//		{
-		//			command = userInput.substr(0, 2);
-		//			roomName = userInput.substr(3);
+					isMessagePopulated = true;
+				}
+				else if (userInput.find("LR ") && userInput.length() > 3)
+				{
+					command = userInput.substr(0, 2);
+					roomName = userInput.substr(3);
 
-		//			theCommands.push_back(command);
-		//			theCommands.push_back(roomName);
+					theCommands.push_back(command);
+					theCommands.push_back(roomName);
 
-		//			isMessagePopulated = true;
-		//		}
-		//		else if (userInput.find("SM ") && userInput.length() > 3)
-		//		{
-		//			command = userInput.substr(0, 2);
-		//			roomName = userInput.substr(3);
+					isMessagePopulated = true;
+				}
+				else if (userInput.find("SM ") && userInput.length() > 3)
+				{
+					command = userInput.substr(0, 2);
+					roomName = userInput.substr(3);
 
-		//			theCommands.push_back(command);
-		//			theCommands.push_back(roomName);
+					theCommands.push_back(command);
+					theCommands.push_back(roomName);
 
-		//			isMessagePopulated = true;
-		//		}
-		//	}
-		//	else
-		//	{
-		//		userInput += c;
-		//	}
-		//}
+					isMessagePopulated = true;
+				}
+			}
+			else
+			{
+				userInput += c;
+			}
+		}
 
 		if (userInput.size() > 0 && isMessagePopulated)
 		{
