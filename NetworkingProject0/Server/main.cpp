@@ -24,6 +24,7 @@ struct userInfo
 //Globel variables
 enum message_ID { JOINROOM, LEAVEROOM, SENDMESSAGE, RECEIVEMESSAGE };
 std::map<char, std::vector<userInfo>> roomMap;
+std::vector<userInfo> usersInServer;
 fd_set master;
 SOCKET ListenSocket;
 Buffer* g_theBuffer = new Buffer();
@@ -148,7 +149,7 @@ int main()
 				*newUser.userSocket = client;
 
 				//Assigns the new user to the hub room.
-				roomMap['a'].push_back(newUser);
+				usersInServer.push_back(newUser);
 
 				// Add the new connection to the list of connected clients
 				FD_SET(client, &master);
@@ -284,13 +285,13 @@ void buildMessage(std::string message)
 	g_theBuffer->WriteStringBE(message);
 }
 
-void joinRoom(userInfo joinUser, char &roomName)
+void joinRoom(userInfo *joinUser, char &roomName)
 {
 	for (std::map<char, std::vector<userInfo>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
 	{
 		if (roomName == it->first)
 		{
-			roomMap[roomName].push_back(joinUser);
+			roomMap[roomName].push_back(*joinUser);
 		}
 	}
 
@@ -299,7 +300,7 @@ void joinRoom(userInfo joinUser, char &roomName)
 		SOCKET outSock = master.fd_array[i];
 		std::string message = "A New User has joined the room :" + roomName;
 		buildMessage(message);
-		if (outSock != ListenSocket && outSock != *joinUser.userSocket)
+		if (outSock != ListenSocket && outSock != *joinUser->userSocket)
 		{
 			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 		}
@@ -309,7 +310,7 @@ void joinRoom(userInfo joinUser, char &roomName)
 	//g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
-void leaveRoom(userInfo leaveUserInfo, char &roomName)
+void leaveRoom(userInfo *leaveUserInfo, char &roomName)
 {
 	for (std::map<char, std::vector<userInfo>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
 	{
@@ -317,7 +318,7 @@ void leaveRoom(userInfo leaveUserInfo, char &roomName)
 		{
 			for (std::vector<userInfo>::iterator iter = it->second.begin(); iter != it->second.end(); ++iter)
 			{
-				if (iter->userSocket == leaveUserInfo.userSocket)
+				if (iter->userSocket == leaveUserInfo->userSocket)
 				{
 					//DELETES THE USER FROM THE ROOM, AS LONG AS THEY ARE IN ANOTHER ROOM THE DATA IS SAVED. (pointer to user in lobby)
 					it->second.erase(iter);
@@ -331,7 +332,7 @@ void leaveRoom(userInfo leaveUserInfo, char &roomName)
 		g_theBuffer = new Buffer();
 		SOCKET outSock = master.fd_array[i];
 		std::string message = "A User has Left the room : " + roomName;
-		if (outSock != ListenSocket && outSock != *leaveUserInfo.userSocket)
+		if (outSock != ListenSocket && outSock != *leaveUserInfo->userSocket)
 		{
 			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 		}
