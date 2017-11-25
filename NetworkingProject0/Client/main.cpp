@@ -110,6 +110,7 @@ int main(int argc, char** argv) {
 	std::string roomName;
 	bool isMessagePopulated = false;
 	int loopControl = 0;
+	int bytesReceived = 0;
 
 	while (true)
 	{
@@ -163,7 +164,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		if (userInput.size() > 0 && isMessagePopulated)
+		if (isMessagePopulated)
 		{
 			isMessagePopulated = false;
 			//read the user input
@@ -179,7 +180,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
+		bytesReceived = 0;//recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
 		if (bytesReceived > 0)
 		{
 			//do the conversion
