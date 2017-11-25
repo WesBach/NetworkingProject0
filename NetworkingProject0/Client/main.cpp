@@ -72,11 +72,6 @@ int main(int argc, char** argv) {
 			WSACleanup();
 			return 1;
 		}
-
-		iResult = ioctlsocket(ConnectSocket, FIONBIO, &iMode);
-		if (iResult != NO_ERROR)
-			printf("ioctlsocket failed with error: %ld\n", iResult);
-
 		//connect to the socket
 		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
 		if (iResult == SOCKET_ERROR) {
@@ -95,7 +90,9 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	
+	iResult = ioctlsocket(ConnectSocket, FIONBIO, &iMode);
+	if (iResult != NO_ERROR)
+		printf("ioctlsocket failed with error: %ld\n", iResult);
 
 	printf("Connected to Server\n");
 	//display commands before loop
@@ -129,20 +126,20 @@ int main(int argc, char** argv) {
 			//send command
 			int sendResult = send(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
 			//check for error
-			if (sendResult != 0)
+			if (sendResult == SOCKET_ERROR)
 			{
 				printf("Send failed with error: %ld\n", sendResult);
 			}
 		}
 
 		int bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
-		if (bytesReceived == 0)
+		if (bytesReceived > 0)
 		{
 			//do the conversion
 			std::string receivedPhrase = receiveMessage(*g_theBuffer);
 			std::cout << "Phrase: " << receivedPhrase << std::endl;
 		}
-		else {//print error message
+		else if(bytesReceived == SOCKET_ERROR) {//print error message
 			printf("receive failed with error: %ld\n", bytesReceived);
 		}
 
