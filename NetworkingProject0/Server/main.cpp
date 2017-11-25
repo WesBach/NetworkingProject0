@@ -34,9 +34,11 @@ std::string parseMessage(int messageLength);
 void sendMessage(SOCKET* sendingUser, std::string message);
 void joinRoom(userInfo joinUser, char &roomName);
 void leaveRoom(userInfo leaveUserInfo, char &roomName);
-std::vector<std::string> readPacket(int packetlength);
+std::vector<std::string> readPacket(userInfo& theUser,int packetlength);
 void buildMessage(userInfo& theUser,std::string message);
 userInfo getClient(SOCKET& theSock);
+void sendServerMessage(SOCKET* sendingUser, std::string message);
+
 
 int g_IDCounter = 0;
 
@@ -156,7 +158,7 @@ int main()
 				// Send a welcome message to the connected client
 				std::string welcomeMsg = "Welcome to the Awesome Chat Server!";
 				//send(client, welcomeMsg.c_str(), welcomeMsg.size() + 1, 0);
-				sendMessage(&ListenSocket, welcomeMsg);
+				sendServerMessage(&newUser.userSocket, welcomeMsg);
 			}
 			else // It's an inbound message
 			{
@@ -176,7 +178,7 @@ int main()
 				else
 				{
 					// Send message to other clients, and definately NOT the listening socket
-					std::vector<std::string> results = readPacket(bytesIn);
+					std::vector<std::string> results = readPacket(currInfo,bytesIn);
 					
 
 					if (results.size() > 1)
@@ -220,15 +222,13 @@ userInfo getClient(SOCKET& theSock) {
 	return currInfo;
 }
 
-
-
 std::string parseMessage(int messageLength) {
 	std::string tempMessage = "";
 	tempMessage += g_theBuffer->ReadStringBE(messageLength);
 	return tempMessage;
 }
 
-std::vector<std::string> readPacket(int packetLength)
+std::vector<std::string> readPacket(userInfo& theUser,int packetLength)
 {
 	std::string message = "";
 	std::string command = "";
@@ -252,13 +252,13 @@ std::vector<std::string> readPacket(int packetLength)
 	{
 		message = "";
 		//read the packet id and the command length
-		messageId = g_theBuffer->ReadInt32BE();
+		messageId = theUser.userBuffer.ReadInt32BE();
 		//get the command length
-		commandLength = g_theBuffer->ReadInt32BE();
+		commandLength = theUser.userBuffer.ReadInt32BE();
 		//read the command 
 		command = parseMessage(commandLength);
 		//get message length
-		messageLength = g_theBuffer->ReadInt32BE();
+		messageLength = theUser.userBuffer.ReadInt32BE();
 		//get message
 		message = parseMessage(commandLength);
 		//push back the messages
@@ -269,9 +269,20 @@ std::vector<std::string> readPacket(int packetLength)
 	return receviedMessages;
 }
 
+void sendServerMessage(SOCKET* sendingUser, std::string message) {
+	//server message happens when client joins the server?
+	userInfo theUser = getClient(*sendingUser);
+	buildMessage(theUser, message);
+
+	int res = send(*sendingUser, theUser.userBuffer.getBufferAsCharArray(), theUser.userBuffer.GetBufferLength(), 0);
+	if (res == SOCKET_ERROR)
+	{
+		printf("Send failed with error: %ld\n", res);
+	}
+}
+
 void sendMessage(SOCKET* sendingUser, std::string message)
 {
-	g_theBuffer = new Buffer();
 	userInfo theUser = getClient(*sendingUser);
 	buildMessage(theUser,message);
 

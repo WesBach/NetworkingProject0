@@ -6,6 +6,8 @@ Buffer::Buffer(size_t size) {
 
 Buffer::Buffer() {
 	this->mBuffer.resize(4096);
+	this->mReadIndex = 0;
+	this->mWriteIndex = 0;
 	return;
 }
 
