@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <conio.h>
+#include <list>
 
 //#include <Windows.h>
 #include <WinSock2.h>
@@ -28,7 +29,8 @@ std::string receiveMessage(Buffer& theBuffer);
 void readInput(std::vector<std::string>& theStrings, std::string input);
 void processCommands(std::vector<std::string>& theCommands);
 std::vector<std::string> theCommands;
-
+std::list<std::string> screenMessages;
+void printScreenData(std::string message);
 
 //TO DO: Client side connection
 int main(int argc, char** argv) {
@@ -111,6 +113,8 @@ int main(int argc, char** argv) {
 	bool isMessagePopulated = false;
 	int loopControl = 0;
 	int bytesReceived = 0;
+
+	void printScreenData();
 
 	while (true)
 	{
@@ -197,6 +201,10 @@ int main(int argc, char** argv) {
 		g_theBuffer = new Buffer();
 	}
 
+	//cleanup
+	closesocket(ConnectSocket);
+	freeaddrinfo(ptr);
+	WSACleanup();
 }
 
 //Name:			receiveMessage
@@ -207,6 +215,14 @@ std::string receiveMessage(Buffer& theBuffer) {
 	std::string message = theBuffer.ReadStringBE(tempHeader.packet_length);
 	return message;
 }
+
+void printScreenData(std::string message) {
+	screenMessages.push_back(message);
+	if (screenMessages.size() >= 15) {
+		screenMessages.pop_front();
+	}
+}
+
 
 //Name:			processCommands
 //Purpose:		processes the user commands and populates the buffer according to message type
