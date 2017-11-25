@@ -144,7 +144,7 @@ int main()
 				SOCKET client = accept(ListenSocket, nullptr, nullptr);
 
 				//Create the userInfo struct and add them to the list of users
-				newUser.userBuffer = new Buffer();
+				newUser.userBuffer = Buffer();
 				newUser.userSocket = client;
 
 				//Assigns the new user to the hub room.
