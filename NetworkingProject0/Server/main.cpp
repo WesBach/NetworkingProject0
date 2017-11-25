@@ -297,6 +297,7 @@ void joinRoom(userInfo *joinUser, char &roomName)
 		if (roomName == it->first)
 		{
 			roomMap[roomName].push_back(joinUser);
+			break;
 		}
 	}
 
