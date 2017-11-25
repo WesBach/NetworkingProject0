@@ -105,22 +105,67 @@ int main(int argc, char** argv) {
 	std::cout << "Join Room		: JR (a-z)" << std::endl;
 	std::cout << "Send Message  : SM (followed by message)" << std::endl;
 	//string for user input
-	std::string userInputA;
-	std::string userInputB;
+	std::string userInput;
+	std::string command;
+	std::string roomName;
+	bool isMessagePopulated = false;
 	int loopControl = 0;
 
-	while (loopControl == 0)
+	while (true)
 	{
-		userInputA = "";
-		userInputB = "";
-		std::cout << "> ";
-		std::cin >> userInputA;
-		std::cin >> userInputB;
-		theCommands.push_back(userInputA);
-		theCommands.push_back(userInputB);
+		//userInputA = "";	
+		//userInputB = "";
+		//std::cout << "> ";
+		//std::cin >> userInputA;
+		//std::cin >> userInputB;
+		//theCommands.push_back(userInputA);
+		//theCommands.push_back(userInputB);
 
-		if (userInputA.size() > 0)
+		//if (_kbhit()) {
+		//	char c = _getch();
+		//	if (c == '\q')
+		//	{
+		//		//no error checking for the room after (right now assume that its correct)
+		//		if (userInput.find("JR ") && userInput.length() > 3)
+		//		{
+		//			command = userInput.substr(0, 2);
+		//			roomName = userInput.substr(3);
+
+		//			theCommands.push_back(command);
+		//			theCommands.push_back(roomName);
+
+		//			isMessagePopulated = true;
+		//		}
+		//		else if (userInput.find("LR ") && userInput.length() > 3)
+		//		{
+		//			command = userInput.substr(0, 2);
+		//			roomName = userInput.substr(3);
+
+		//			theCommands.push_back(command);
+		//			theCommands.push_back(roomName);
+
+		//			isMessagePopulated = true;
+		//		}
+		//		else if (userInput.find("SM ") && userInput.length() > 3)
+		//		{
+		//			command = userInput.substr(0, 2);
+		//			roomName = userInput.substr(3);
+
+		//			theCommands.push_back(command);
+		//			theCommands.push_back(roomName);
+
+		//			isMessagePopulated = true;
+		//		}
+		//	}
+		//	else
+		//	{
+		//		userInput += c;
+		//	}
+		//}
+
+		if (userInput.size() > 0 && isMessagePopulated)
 		{
+			isMessagePopulated = false;
 			//read the user input
 			//readInput(theCommands, userInput);
 			//process the commands from input 
