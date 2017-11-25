@@ -153,6 +153,7 @@ std::string Buffer::ReadStringBE(size_t index, int length) {
 
 std::string Buffer::ReadStringBE(int length) {
 	std::string phrase = "";
+	length += mReadIndex;
 	for (int i = mReadIndex; i < length; i++)
 	{
 		phrase += mBuffer[mReadIndex];

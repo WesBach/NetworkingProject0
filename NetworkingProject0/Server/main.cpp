@@ -144,7 +144,7 @@ int main()
 				SOCKET client = accept(ListenSocket, nullptr, nullptr);
 
 				//Create the userInfo struct and add them to the list of users
-				newUser.userBuffer = new Buffer();
+				newUser.userBuffer = Buffer();
 				newUser.userSocket = client;
 
 				//Assigns the new user to the hub room.
@@ -274,7 +274,11 @@ void sendMessage(SOCKET* sendingUser, std::string message)
 		SOCKET outSock = master.fd_array[i];
 		if (outSock != ListenSocket && outSock != *sendingUser)
 		{
-			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+			int res = send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+			if (res != 0)
+			{
+				printf("Send failed with error: %ld\n", res);
+			}
 		}
 	}
 }
@@ -303,7 +307,11 @@ void joinRoom(userInfo *joinUser, char &roomName)
 		buildMessage(message);
 		if (outSock != ListenSocket && outSock != joinUser->userSocket)
 		{
-			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+			int res = send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+			if (res != 0)
+			{
+				printf("Send failed with error: %ld\n", res);
+			}
 		}
 	}
 	//add the user who wants to join to the roomMap with the rom they specified

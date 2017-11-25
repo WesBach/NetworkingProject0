@@ -72,6 +72,11 @@ int main(int argc, char** argv) {
 			WSACleanup();
 			return 1;
 		}
+
+		iResult = ioctlsocket(ConnectSocket, FIONBIO, &iMode);
+		if (iResult != NO_ERROR)
+			printf("ioctlsocket failed with error: %ld\n", iResult);
+
 		//connect to the socket
 		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
 		if (iResult == SOCKET_ERROR) {
@@ -90,9 +95,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	iResult = ioctlsocket(ConnectSocket, FIONBIO, &iMode);
-	if (iResult != NO_ERROR)
-		printf("ioctlsocket failed with error: %ld\n", iResult);
+	
 
 	printf("Connected to Server\n");
 	//display commands before loop
