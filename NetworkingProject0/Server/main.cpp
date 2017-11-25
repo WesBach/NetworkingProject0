@@ -32,11 +32,11 @@ std::string parseMessage(int messageLength);
 
 //Protocols method headers
 void sendMessage(SOCKET* sendingUser, std::string message);
-void joinRoom(userInfo *joinUser, char &roomName);
-void leaveRoom(userInfo *leaveUserInfo, char &roomName);
+void joinRoom(userInfo joinUser, char &roomName);
+void leaveRoom(userInfo leaveUserInfo, char &roomName);
 std::vector<std::string> readPacket(int packetlength);
-void buildMessage(std::string message);
-userInfo* getClient(SOCKET& theSock);
+void buildMessage(userInfo& theUser,std::string message);
+userInfo getClient(SOCKET& theSock);
 
 int g_IDCounter = 0;
 
@@ -161,10 +161,11 @@ int main()
 			else // It's an inbound message
 			{
 				//g_theBuffer = new Buffer();
+				userInfo currInfo = getClient(sock);
 
 				// Receive message
 				int bytesIn;
-				bytesIn = recv(sock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+				bytesIn = recv(sock, currInfo.userBuffer.getBufferAsCharArray(), currInfo.userBuffer.GetBufferLength(), 0);
 
 				if (bytesIn < 0)
 				{
@@ -176,7 +177,7 @@ int main()
 				{
 					// Send message to other clients, and definately NOT the listening socket
 					std::vector<std::string> results = readPacket(bytesIn);
-					userInfo *currClient = getClient(sock);
+					
 
 					if (results.size() > 1)
 					{
@@ -188,11 +189,11 @@ int main()
 						else if (results[0] == "JR" || results[0] == "jr")
 						{
 							
-							joinRoom(currClient, results[1][0]);
+							joinRoom(currInfo, results[1][0]);
 						}
 						else if (results[0] == "LR" || results[0] == "lr")
 						{
-							leaveRoom(currClient, results[1][0]);
+							leaveRoom(currInfo, results[1][0]);
 						}
 					}
 				}
@@ -207,13 +208,16 @@ int main()
 	WSACleanup();
 }
 
-userInfo* getClient(SOCKET& theSock) {
-	//TODO:: 
-	//use the new vector of userinfo to return the current user info
-
-	//This is just here to make it compile
-	userInfo *something = new userInfo();
-	return something;
+userInfo getClient(SOCKET& theSock) {
+	userInfo currInfo;
+	for (int i = 0; i < usersInServer.size(); i++)
+	{
+		if (usersInServer[i].userSocket == theSock)
+		{
+			currInfo = usersInServer[i];
+		}
+	}
+	return currInfo;
 }
 
 
@@ -268,13 +272,15 @@ std::vector<std::string> readPacket(int packetLength)
 void sendMessage(SOCKET* sendingUser, std::string message)
 {
 	g_theBuffer = new Buffer();
-	buildMessage(message);
+	userInfo theUser = getClient(*sendingUser);
+	buildMessage(theUser,message);
+
 	for (int i = 0; i < master.fd_count; i++)
 	{
 		SOCKET outSock = master.fd_array[i];
 		if (outSock != ListenSocket && outSock != *sendingUser)
 		{
-			int res = send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+			int res = send(outSock, theUser.userBuffer.getBufferAsCharArray(), theUser.userBuffer.GetBufferLength(), 0);
 			if (res == SOCKET_ERROR)
 			{
 				printf("Send failed with error: %ld\n", res);
@@ -283,20 +289,20 @@ void sendMessage(SOCKET* sendingUser, std::string message)
 	}
 }
 
-void buildMessage(std::string message)
+void buildMessage(userInfo& theUser,std::string message)
 {
-	g_theBuffer = new Buffer();
-	g_theBuffer->WriteInt32BE(message.size());
-	g_theBuffer->WriteStringBE(message);
+	theUser.userBuffer = Buffer(); 
+	theUser.userBuffer.WriteInt32BE(message.size());
+	theUser.userBuffer.WriteStringBE(message);
 }
 
-void joinRoom(userInfo *joinUser, char &roomName)
+void joinRoom(userInfo joinUser, char &roomName)
 {
 	for (std::map<char, std::vector<userInfo*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
 	{
 		if (roomName == it->first)
 		{
-			roomMap[roomName].push_back(joinUser);
+			roomMap[roomName].push_back(&joinUser);
 		}
 	}
 
@@ -304,10 +310,13 @@ void joinRoom(userInfo *joinUser, char &roomName)
 	{
 		SOCKET outSock = master.fd_array[i];
 		std::string message = "A New User has joined the room :" + roomName;
-		buildMessage(message);
-		if (outSock != ListenSocket && outSock != joinUser->userSocket)
+		userInfo tempInfo = getClient(outSock);
+
+		buildMessage(tempInfo,message);
+
+		if (outSock != ListenSocket && outSock != joinUser.userSocket)
 		{
-			int res = send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
+			int res = send(outSock, tempInfo.userBuffer.getBufferAsCharArray(), tempInfo.userBuffer.GetBufferLength(), 0);
 			if (res == SOCKET_ERROR)
 			{
 				printf("Send failed with error: %ld\n", res);
@@ -319,7 +328,7 @@ void joinRoom(userInfo *joinUser, char &roomName)
 	//g_curSocketInfo->buffer->WriteStringBE(roomName);
 }
 
-void leaveRoom(userInfo *leaveUserInfo, char &roomName)
+void leaveRoom(userInfo leaveUserInfo, char &roomName)
 {
 	for (std::map<char, std::vector<userInfo*>>::iterator it = roomMap.begin(); it != roomMap.end(); ++it)
 	{
@@ -328,7 +337,7 @@ void leaveRoom(userInfo *leaveUserInfo, char &roomName)
 			for (std::vector<userInfo*>::iterator iter = it->second.begin(); iter != it->second.end(); ++iter)
 			{
 				//TODO: if it is the same userInfo (this might not work)
-				if (*iter == leaveUserInfo)
+				if (*iter == &leaveUserInfo)
 				{
 					//DELETES THE USER FROM THE ROOM, AS LONG AS THEY ARE IN ANOTHER ROOM THE DATA IS SAVED. (pointer to user in lobby)
 					it->second.erase(iter);
@@ -342,7 +351,7 @@ void leaveRoom(userInfo *leaveUserInfo, char &roomName)
 		g_theBuffer = new Buffer();
 		SOCKET outSock = master.fd_array[i];
 		std::string message = "A User has Left the room : " + roomName;
-		if (outSock != ListenSocket && outSock != leaveUserInfo->userSocket)
+		if (outSock != ListenSocket && outSock != leaveUserInfo.userSocket)
 		{
 			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 		}
