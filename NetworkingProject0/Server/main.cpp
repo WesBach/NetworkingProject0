@@ -275,7 +275,7 @@ void sendMessage(SOCKET* sendingUser, std::string message)
 		if (outSock != ListenSocket && outSock != *sendingUser)
 		{
 			int res = send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
-			if (res != 0)
+			if (res == SOCKET_ERROR)
 			{
 				printf("Send failed with error: %ld\n", res);
 			}
@@ -308,7 +308,7 @@ void joinRoom(userInfo *joinUser, char &roomName)
 		if (outSock != ListenSocket && outSock != joinUser->userSocket)
 		{
 			int res = send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
-			if (res != 0)
+			if (res == SOCKET_ERROR)
 			{
 				printf("Send failed with error: %ld\n", res);
 			}
