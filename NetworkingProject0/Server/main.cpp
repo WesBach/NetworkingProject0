@@ -31,10 +31,11 @@ std::string parseMessage(int messageLength);
 
 //Protocols method headers
 void sendMessage(SOCKET* sendingUser, std::string message);
-void joinRoom(SOCKET* joinSocket, char &roomName);
-void leaveRoom(SOCKET* leaveSocket, char &roomName);
+void joinRoom(userInfo joinSocket, char &roomName);
+void leaveRoom(userInfo leaveSocket, char &roomName);
 std::vector<std::string> readPacket(int packetlength);
 void buildMessage(std::string message);
+userInfo getClient(SOCKET& theSock);
 
 int g_IDCounter = 0;
 
@@ -175,6 +176,8 @@ int main()
 				{
 					// Send message to other clients, and definately NOT the listening socket
 					std::vector<std::string> results = readPacket(bytesIn);
+					userInfo currClient = getClient(sock);
+
 					if (results.size() > 1)
 					{
 						//if (theCommands[0] == "SM" || theCommands[0] == "sm")
@@ -184,11 +187,12 @@ int main()
 						}
 						else if (results[0] == "JR" || results[0] == "jr")
 						{
-							joinRoom(&sock, results[1][0]);
+							
+							joinRoom(currClient, results[1][0]);
 						}
 						else if (results[0] == "LR" || results[0] == "lr")
 						{
-							leaveRoom(&sock, results[1][0]);
+							leaveRoom(currClient, results[1][0]);
 						}
 					}
 				}
@@ -202,6 +206,15 @@ int main()
 	closesocket(ListenSocket);
 	WSACleanup();
 }
+
+userInfo getClient(SOCKET& theSock) {
+	//TODO:: 
+	//use the new vector of userinfo to return the current user info
+
+
+}
+
+
 
 std::string parseMessage(int messageLength) {
 	std::string tempMessage = "";
@@ -291,7 +304,6 @@ void joinRoom(userInfo joinUser, char &roomName)
 			send(outSock, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength(), 0);
 		}
 	}
-
 	//add the user who wants to join to the roomMap with the rom they specified
 	//g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
 	//g_curSocketInfo->buffer->WriteStringBE(roomName);
@@ -325,5 +337,3 @@ void leaveRoom(userInfo leaveUserInfo, char &roomName)
 		}
 	}
 }
-
-

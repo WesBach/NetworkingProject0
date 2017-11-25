@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
 			//check for error
 			if (sendResult != 0)
 			{
-				printf("ioctlsocket failed with error: %ld\n", sendResult);
+				printf("Send failed with error: %ld\n", sendResult);
 			}
 		}
 
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
 			std::cout << "Phrase: " << receivedPhrase << std::endl;
 		}
 		else {//print error message
-			printf("ioctlsocket failed with error: %ld\n", bytesReceived);
+			printf("receive failed with error: %ld\n", bytesReceived);
 		}
 
 		//clear the commands so they don't build up
