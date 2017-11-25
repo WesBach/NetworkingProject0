@@ -196,6 +196,10 @@ int main(int argc, char** argv) {
 		g_theBuffer = new Buffer();
 	}
 
+	//cleanup
+	closesocket(ConnectSocket);
+	freeaddrinfo(ptr);
+	WSACleanup();
 }
 
 //Name:			receiveMessage
