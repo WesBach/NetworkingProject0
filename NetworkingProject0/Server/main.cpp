@@ -28,7 +28,7 @@ std::vector<userInfo> usersInServer;
 fd_set master;
 SOCKET ListenSocket;
 Buffer* g_theBuffer = new Buffer();
-std::string parseMessage(int messageLength);
+std::string parseMessage(int messageLength, Buffer userBuffer);
 
 //Protocols method headers
 void sendMessage(SOCKET* sendingUser, std::string message);
@@ -222,9 +222,9 @@ userInfo getClient(SOCKET& theSock) {
 	return currInfo;
 }
 
-std::string parseMessage(int messageLength) {
+std::string parseMessage(int messageLength, Buffer userBuffer) {
 	std::string tempMessage = "";
-	tempMessage += g_theBuffer->ReadStringBE(messageLength);
+	tempMessage += userBuffer.ReadStringBE(messageLength);
 	return tempMessage;
 }
 
@@ -256,11 +256,11 @@ std::vector<std::string> readPacket(userInfo& theUser,int packetLength)
 		//get the command length
 		commandLength = theUser.userBuffer.ReadInt32BE();
 		//read the command 
-		command = parseMessage(commandLength);
+		command = parseMessage(commandLength, theUser.userBuffer);
 		//get message length
 		messageLength = theUser.userBuffer.ReadInt32BE();
 		//get message
-		message = parseMessage(commandLength);
+		message = parseMessage(commandLength, theUser.userBuffer);
 		//push back the messages
 		receviedMessages.push_back(command);
 		receviedMessages.push_back(message);

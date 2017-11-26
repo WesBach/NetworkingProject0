@@ -94,9 +94,16 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	iResult = ioctlsocket(ConnectSocket, FIONBIO, &iMode);
-	if (iResult != NO_ERROR)
-		printf("ioctlsocket failed with error: %ld\n", iResult);
+	unsigned long nonBlock = 1;
+	//set socket to non-blocking for recieving messages
+	if (ioctlsocket(ConnectSocket, FIONBIO, &nonBlock) == SOCKET_ERROR) {
+		printf("ioctlsocket(FIONBIO) failed with error %d\n", WSAGetLastError());
+		return 1;
+	}
+
+	//iResult = ioctlsocket(ConnectSocket, FIONBIO, &iMode);
+	//if (iResult != NO_ERROR)
+	//	printf("ioctlsocket failed with error: %ld\n", iResult);
 
 	printf("Connected to Server\n");
 	//display commands before loop
@@ -129,7 +136,7 @@ int main(int argc, char** argv) {
 			if (c == '\r')
 			{
 				//no error checking for the room after (right now assume that its correct)
-				if (userInput.find("JR ") && userInput.length() > 3)
+				if (userInput.find("JR ") == 0 && userInput.length() > 3)
 				{
 					command = userInput.substr(0, 2);
 					roomName = userInput.substr(3,1);
@@ -182,7 +189,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		bytesReceived = 0;//recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
+		bytesReceived = recv(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
 		if (bytesReceived > 0)
 		{
 			//do the conversion
@@ -230,6 +237,25 @@ void processCommands(std::vector<std::string>& theCommands) {
 		//if the command is to leave room
 		if (theCommands[0] == "LR" || theCommands[0] == "lr")
 		{
+			////Create the header with massageType
+			//g_theHeader = new Header();
+			//g_theHeader->message_id = 3;
+
+			////Get the size of everything going in the message
+			//g_theHeader->packet_length += sizeof(g_theHeader->message_id);
+			//g_theHeader->packet_length += sizeof(theCommands[0]);
+			//g_theHeader->packet_length += sizeof(theCommands[1]);
+			//g_theHeader->packet_length += sizeof(theCommands);
+
+			////Write everything into the buffer (packet length, messageID, commandLength, command, messageLength, message)
+			//g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+			//g_theBuffer->WriteInt32BE(g_theHeader->message_id);
+			//g_theBuffer->WriteInt32BE(sizeof(theCommands[0]));
+			//g_theBuffer->WriteStringBE(theCommands[0]);
+			//g_theBuffer->WriteInt32BE(sizeof(theCommands[1]));
+			//g_theBuffer->WriteStringBE(theCommands[1]);
+
+			//Create the header with massageType
 			g_theHeader = new Header();
 			g_theHeader->message_id = 3;
 			//write header
@@ -246,6 +272,25 @@ void processCommands(std::vector<std::string>& theCommands) {
 		//if the command is to join room
 		if (theCommands[0] == "JR" || theCommands[0] == "jr")
 		{
+			////Create the header with massageType
+			//g_theHeader = new Header();
+			//g_theHeader->message_id = 2;
+
+			////Get the size of everything going in the message
+			//g_theHeader->packet_length += sizeof(g_theHeader->message_id);
+			//g_theHeader->packet_length += sizeof(theCommands[0]);
+			//g_theHeader->packet_length += sizeof(theCommands[1]);
+			//g_theHeader->packet_length += sizeof(theCommands);
+
+			////Write everything into the buffer (packet length, messageID, commandLength, command, messageLength, message)
+			//g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+			//g_theBuffer->WriteInt32BE(g_theHeader->message_id);
+			//g_theBuffer->WriteInt32BE(sizeof(theCommands[0]));
+			//g_theBuffer->WriteStringBE(theCommands[0]);
+			//g_theBuffer->WriteInt32BE(sizeof(theCommands[1]));
+			//g_theBuffer->WriteStringBE(theCommands[1]);
+
+
 			g_theHeader = new Header();
 			g_theHeader->message_id = 2;
 			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
@@ -259,6 +304,25 @@ void processCommands(std::vector<std::string>& theCommands) {
 		//if the command is to send message
 		if (theCommands[0] == "SM" || theCommands[0] == "sm")
 		{
+			////Create the header with massageType
+			//g_theHeader = new Header();
+			//g_theHeader->message_id = 1;
+
+			////Get the size of everything going in the message
+			//g_theHeader->packet_length += sizeof(g_theHeader->message_id);
+			//g_theHeader->packet_length += sizeof(theCommands[0]);
+			//g_theHeader->packet_length += sizeof(theCommands[1]);
+			//g_theHeader->packet_length += sizeof(theCommands);
+
+			////Write everything into the buffer (packet length, messageID, commandLength, command, messageLength, message)
+			//g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+			//g_theBuffer->WriteInt32BE(g_theHeader->message_id);
+			//g_theBuffer->WriteInt32BE(sizeof(theCommands[0]));
+			//g_theBuffer->WriteStringBE(theCommands[0]);
+			//g_theBuffer->WriteInt32BE(sizeof(theCommands[1]));
+			//g_theBuffer->WriteStringBE(theCommands[1]);
+
+
 			g_theHeader = new Header();
 			g_theHeader->message_id = 1;
 			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
