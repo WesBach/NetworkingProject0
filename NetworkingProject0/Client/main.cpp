@@ -243,16 +243,16 @@ void processCommands(std::vector<std::string>& theCommands) {
 
 			////Get the size of everything going in the message
 			//g_theHeader->packet_length += sizeof(g_theHeader->message_id);
-			//g_theHeader->packet_length += sizeof(theCommands[0]);
-			//g_theHeader->packet_length += sizeof(theCommands[1]);
-			//g_theHeader->packet_length += sizeof(theCommands);
+			//g_theHeader->packet_length += theCommands[0].length() * sizeof(char);
+			//g_theHeader->packet_length += theCommands[1].length() * sizeof(char);
+			//g_theHeader->packet_length += (theCommands[0].length() * sizeof(char)) + (theCommands[1].length() * sizeof(char));
 
 			////Write everything into the buffer (packet length, messageID, commandLength, command, messageLength, message)
 			//g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
 			//g_theBuffer->WriteInt32BE(g_theHeader->message_id);
-			//g_theBuffer->WriteInt32BE(sizeof(theCommands[0]));
+			//g_theBuffer->WriteInt32BE(theCommands[0].length() * sizeof(char));
 			//g_theBuffer->WriteStringBE(theCommands[0]);
-			//g_theBuffer->WriteInt32BE(sizeof(theCommands[1]));
+			//g_theBuffer->WriteInt32BE(theCommands[1].length() * sizeof(char));
 			//g_theBuffer->WriteStringBE(theCommands[1]);
 
 			//Create the header with massageType
@@ -278,16 +278,16 @@ void processCommands(std::vector<std::string>& theCommands) {
 
 			////Get the size of everything going in the message
 			//g_theHeader->packet_length += sizeof(g_theHeader->message_id);
-			//g_theHeader->packet_length += sizeof(theCommands[0]);
-			//g_theHeader->packet_length += sizeof(theCommands[1]);
-			//g_theHeader->packet_length += sizeof(theCommands);
+			//g_theHeader->packet_length += theCommands[0].length() * sizeof(char);
+			//g_theHeader->packet_length += theCommands[1].length() * sizeof(char);
+			//g_theHeader->packet_length += (theCommands[0].length() * sizeof(char)) + (theCommands[1].length() * sizeof(char));
 
 			////Write everything into the buffer (packet length, messageID, commandLength, command, messageLength, message)
 			//g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
 			//g_theBuffer->WriteInt32BE(g_theHeader->message_id);
-			//g_theBuffer->WriteInt32BE(sizeof(theCommands[0]));
+			//g_theBuffer->WriteInt32BE(theCommands[0].length() * sizeof(char));
 			//g_theBuffer->WriteStringBE(theCommands[0]);
-			//g_theBuffer->WriteInt32BE(sizeof(theCommands[1]));
+			//g_theBuffer->WriteInt32BE(theCommands[1].length() * sizeof(char));
 			//g_theBuffer->WriteStringBE(theCommands[1]);
 
 
@@ -310,16 +310,16 @@ void processCommands(std::vector<std::string>& theCommands) {
 
 			////Get the size of everything going in the message
 			//g_theHeader->packet_length += sizeof(g_theHeader->message_id);
-			//g_theHeader->packet_length += sizeof(theCommands[0]);
-			//g_theHeader->packet_length += sizeof(theCommands[1]);
-			//g_theHeader->packet_length += sizeof(theCommands);
+			//g_theHeader->packet_length += theCommands[0].length() * sizeof(char);
+			//g_theHeader->packet_length += theCommands[1].length() * sizeof(char);
+			//g_theHeader->packet_length += (theCommands[0].length() * sizeof(char)) + (theCommands[1].length() * sizeof(char));
 
 			////Write everything into the buffer (packet length, messageID, commandLength, command, messageLength, message)
 			//g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
 			//g_theBuffer->WriteInt32BE(g_theHeader->message_id);
-			//g_theBuffer->WriteInt32BE(sizeof(theCommands[0]));
+			//g_theBuffer->WriteInt32BE(theCommands[0].length() * sizeof(char));
 			//g_theBuffer->WriteStringBE(theCommands[0]);
-			//g_theBuffer->WriteInt32BE(sizeof(theCommands[1]));
+			//g_theBuffer->WriteInt32BE(theCommands[1].length() * sizeof(char));
 			//g_theBuffer->WriteStringBE(theCommands[1]);
 
 
