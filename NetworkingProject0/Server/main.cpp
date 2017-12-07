@@ -28,14 +28,14 @@ std::vector<userInfo> usersInServer;
 fd_set master;
 SOCKET ListenSocket;
 Buffer* g_theBuffer = new Buffer();
-std::string parseMessage(int messageLength, Buffer userBuffer);
+std::string parseMessage(int messageLength, Buffer& userBuffer);
 
 //Protocols method headers
 void sendMessage(SOCKET* sendingUser, std::string message);
 void joinRoom(userInfo joinUser, char &roomName);
 void leaveRoom(userInfo leaveUserInfo, char &roomName);
 std::vector<std::string> readPacket(userInfo& theUser,int packetlength);
-void buildMessage(userInfo& theUser,std::string message);
+void buildMessage(userInfo& theUser,std::string& message);
 userInfo getClient(SOCKET& theSock);
 void sendServerMessage(SOCKET* sendingUser, std::string message);
 
@@ -222,7 +222,7 @@ userInfo getClient(SOCKET& theSock) {
 	return currInfo;
 }
 
-std::string parseMessage(int messageLength, Buffer userBuffer) {
+std::string parseMessage(int messageLength, Buffer& userBuffer) {
 	std::string tempMessage = "";
 	tempMessage += userBuffer.ReadStringBE(messageLength);
 	return tempMessage;
@@ -260,7 +260,7 @@ std::vector<std::string> readPacket(userInfo& theUser,int packetLength)
 		//get message length
 		messageLength = theUser.userBuffer.ReadInt32BE();
 		//get message
-		message = parseMessage(commandLength, theUser.userBuffer);
+		message = parseMessage(messageLength, theUser.userBuffer);
 		//push back the messages
 		receviedMessages.push_back(command);
 		receviedMessages.push_back(message);
@@ -300,7 +300,7 @@ void sendMessage(SOCKET* sendingUser, std::string message)
 	}
 }
 
-void buildMessage(userInfo& theUser,std::string message)
+void buildMessage(userInfo& theUser,std::string& message)
 {
 	theUser.userBuffer = Buffer(); 
 	theUser.userBuffer.WriteInt32BE(message.size());
@@ -317,14 +317,18 @@ void joinRoom(userInfo joinUser, char &roomName)
 		}
 	}
 
+	userInfo tempInfo;
+
 	for (int i = 0; i < master.fd_count; i++)
 	{
 		SOCKET outSock = master.fd_array[i];
-		std::string message = "A New User has joined the room :" + roomName;
-		userInfo tempInfo = getClient(outSock);
+		std::string message = "A New User has joined the room: ";
+		message += roomName;
+		tempInfo = getClient(outSock);
 
 		buildMessage(tempInfo,message);
 
+		//send all other clients in that room a message that a user joined
 		if (outSock != ListenSocket && outSock != joinUser.userSocket)
 		{
 			int res = send(outSock, tempInfo.userBuffer.getBufferAsCharArray(), tempInfo.userBuffer.GetBufferLength(), 0);
@@ -333,10 +337,20 @@ void joinRoom(userInfo joinUser, char &roomName)
 				printf("Send failed with error: %ld\n", res);
 			}
 		}
+
+		
 	}
-	//add the user who wants to join to the roomMap with the rom they specified
-	//g_curSocketInfo->buffer->WriteInt32BE(roomName.length());
-	//g_curSocketInfo->buffer->WriteStringBE(roomName);
+
+	std::string joinConfirmation = "You successfully joined room: ";
+	joinConfirmation += roomName;
+	buildMessage(tempInfo, joinConfirmation);
+
+	//send the client a message back about joining the room
+	int res = send(joinUser.userSocket, tempInfo.userBuffer.getBufferAsCharArray(), tempInfo.userBuffer.GetBufferLength(), 0);
+	if (res == SOCKET_ERROR)
+	{
+		printf("Send failed with error: %ld\n", res);
+	}
 }
 
 void leaveRoom(userInfo leaveUserInfo, char &roomName)

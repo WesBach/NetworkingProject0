@@ -1,5 +1,6 @@
 
 #include "Buffer.h"
+#include "Utils.h"
 #include <string>
 #include <iostream>
 #include <conio.h>
@@ -30,7 +31,8 @@ void readInput(std::vector<std::string>& theStrings, std::string input);
 void processCommands(std::vector<std::string>& theCommands);
 std::vector<std::string> theCommands;
 std::list<std::string> screenMessages;
-void printScreenData(std::string message);
+void populateScreenData(std::string message);
+void printScreen();
 
 //TO DO: Client side connection
 int main(int argc, char** argv) {
@@ -105,24 +107,29 @@ int main(int argc, char** argv) {
 	//if (iResult != NO_ERROR)
 	//	printf("ioctlsocket failed with error: %ld\n", iResult);
 
-	printf("Connected to Server\n");
 	//display commands before loop
-	std::cout << "=======================================" << std::endl;
-	std::cout << "               Commands:               " << std::endl;
-	std::cout << "=======================================" << std::endl;
-	std::cout << "Leave Room	: LR (a-z)" << std::endl;
-	std::cout << "Join Room		: JR (a-z)" << std::endl;
-	std::cout << "Send Message  : SM (followed by message)" << std::endl;
+	print_text("=======================================");
+	print_text("		Commands:              ");
+	print_text("=======================================");
+	print_text("Leave Room: LR (a-z)");
+	print_text("Join Room: JR (a-z)");
+	print_text("Send Message: SM (followed by message)");
+
+	print_text("Connected to Server");
+
 	//string for user input
 	std::string userInput;
 	std::string command;
 	std::string roomName;
 	bool isMessagePopulated = false;
-	int loopControl = 0;
+	int smFind = -1;
+	int lrFind = -1;
+	int jrFind = -1;
 	int bytesReceived = 0;
 
 	while (true)
 	{
+		start_text();
 		//userInputA = "";	
 		//userInputB = "";
 		//std::cout << "> ";
@@ -135,42 +142,57 @@ int main(int argc, char** argv) {
 			char c = _getch();
 			if (c == '\r')
 			{
+				
 				//no error checking for the room after (right now assume that its correct)
-				if (userInput.find("JR ") == 0 && userInput.length() > 3)
+				if (userInput.length() > 3)
 				{
-					command = userInput.substr(0, 2);
-					roomName = userInput.substr(3,1);
+					smFind = userInput.find("SM ");
+					jrFind = userInput.find("JR ");
+					lrFind = userInput.find("LR ");
 
-					theCommands.push_back(command);
-					theCommands.push_back(roomName);
+					if (jrFind >= 0)
+					{
+						command = userInput.substr(0, 2);
+						roomName = userInput.substr(3, 1);
 
-					isMessagePopulated = true;
-				}
-				else if (userInput.find("LR ") && userInput.length() > 3)
-				{
-					command = userInput.substr(0, 2);
-					roomName = userInput.substr(3);
+						theCommands.push_back(command);
+						theCommands.push_back(roomName);
+						isMessagePopulated = true;
+						userInput = "";
+					}
 
-					theCommands.push_back(command);
-					theCommands.push_back(roomName);
+					if (smFind >= 0)
+					{
+						command = userInput.substr(0, 2);
+						roomName = userInput.substr(3, userInput.size() - 3);
 
-					isMessagePopulated = true;
-				}
-				else if (userInput.find("SM ") && userInput.length() > 3)
-				{
-					command = userInput.substr(0, 2);
-					roomName = userInput.substr(3);
+						theCommands.push_back(command);
+						theCommands.push_back(roomName);
+						isMessagePopulated = true;
+						userInput = "";
+					}
 
-					theCommands.push_back(command);
-					theCommands.push_back(roomName);
+					if (lrFind >= 0)
+					{
+						command = userInput.substr(0, 2);
+						roomName = userInput.substr(3, 1);
 
-					isMessagePopulated = true;
-				}
+						theCommands.push_back(command);
+						theCommands.push_back(roomName);
+						isMessagePopulated = true;
+						userInput = "";
+					}
+					
+				}			
+				populateScreenData(command + " " + roomName);
+
 			}
 			else
 			{
 				userInput += c;
 			}
+
+
 		}
 
 		if (isMessagePopulated)
@@ -180,12 +202,13 @@ int main(int argc, char** argv) {
 			//readInput(theCommands, userInput);
 			//process the commands from input 
 			processCommands(theCommands);
+			
 			//send command
 			int sendResult = send(ConnectSocket, g_theBuffer->getBufferAsCharArray(), g_theBuffer->GetBufferLength() + 1, 0);
 			//check for error
 			if (sendResult == SOCKET_ERROR)
 			{
-				printf("Send failed with error: %ld\n", sendResult);
+				print_text("Send failed with error: %s", sendResult);
 			}
 		}
 
@@ -194,16 +217,24 @@ int main(int argc, char** argv) {
 		{
 			//do the conversion
 			std::string receivedPhrase = receiveMessage(*g_theBuffer);
-			std::cout << "Phrase: " << receivedPhrase << std::endl;
+			if(receivedPhrase.size() > 0)
+				populateScreenData(receivedPhrase);
 		}
-		else if(bytesReceived == SOCKET_ERROR) {//print error message
-			printf("receive failed with error: %ld\n", bytesReceived);
+		else if (bytesReceived == -1) {//print error message
+
+		}
+		else if(bytesReceived == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {//print error message
+			print_text("receive failed with error: %s", WSAGetLastError());
 		}
 
 		//clear the commands so they don't build up
 		theCommands.clear();
 		//clear the buffer for the next set of info
 		g_theBuffer = new Buffer();
+
+		printScreen();
+
+		end_text();
 	}
 
 	//cleanup
@@ -221,10 +252,20 @@ std::string receiveMessage(Buffer& theBuffer) {
 	return message;
 }
 
-void printScreenData(std::string message) {
+void populateScreenData(std::string message) {
 	screenMessages.push_back(message);
 	if (screenMessages.size() >= 15) {
 		screenMessages.pop_front();
+	}
+}
+
+void printScreen()
+{
+	std::list<std::string>::const_iterator iterator;
+	std::string temp = "";
+	for (iterator = screenMessages.begin(); iterator != screenMessages.end(); ++iterator) {
+		temp = *iterator;
+		print_text("->%s", temp.c_str());
 	}
 }
 
@@ -293,11 +334,17 @@ void processCommands(std::vector<std::string>& theCommands) {
 
 			g_theHeader = new Header();
 			g_theHeader->message_id = 2;
+			//write message id
 			g_theBuffer->WriteInt32BE(g_theHeader->message_id);
-			g_theHeader->packet_length = theCommands[0].size();
+			//get packet length
+			g_theHeader->packet_length = 2;
+			//write packet length
 			g_theBuffer->WriteInt32BE(g_theHeader->packet_length);
+			//write the command
 			g_theBuffer->WriteStringBE(theCommands[0]);
+			//write the packet length
 			g_theBuffer->WriteInt32BE(theCommands[1].size());
+			//write the 
 			g_theBuffer->WriteStringBE(theCommands[1]);
 		}
 
@@ -335,7 +382,6 @@ void processCommands(std::vector<std::string>& theCommands) {
 
 	}
 }
-
 
 //Name:			readInput
 //Purpose:		parses the input from the user and separates the first and second strings

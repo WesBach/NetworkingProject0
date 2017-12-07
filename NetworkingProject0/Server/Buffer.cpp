@@ -47,9 +47,13 @@ int Buffer::ReadInt32BE(void) {
 int Buffer::ReadInt32BE(size_t index) {
 	//little endian is [index], [index] <<4, [index]<<16, [index]<<24
 	int32_t value = mBuffer[index] << 24;
+	mReadIndex++;
 	value |= mBuffer[index + 1] << 16;
+	mReadIndex++;
 	value |= mBuffer[index + 2] << 8;
+	mReadIndex++;
 	value |= mBuffer[index + 3];
+	mReadIndex++;
 	return value;
 }
 
@@ -93,12 +97,14 @@ void Buffer::WriteUShortBE(unsigned short value) {
 unsigned short Buffer::ReadUShortBE(size_t index) {
 	unsigned short value = mBuffer[index] << 8;
 	value |= mBuffer[index + 1];
+	mReadIndex++;
 	return value;
 }
 
 unsigned short Buffer::ReadUShortBE(void) {
 	unsigned short value = mBuffer[mReadIndex] << 8;
 	value |= mBuffer[mReadIndex + 1];
+	mReadIndex++;
 	return value;
 }
 
@@ -121,12 +127,14 @@ void Buffer::WriteShortBE(short value) {
 short Buffer::ReadShortBE(size_t index) {
 	short value = mBuffer[index] << 8;
 	value |= mBuffer[index + 1];
+	mReadIndex++;
 	return value;
 }
 
 short Buffer::ReadShortBE(void) {
 	short value = mBuffer[mReadIndex] << 8;
 	value |= mBuffer[mReadIndex + 1];
+	mReadIndex++;
 	return value;
 }
 
